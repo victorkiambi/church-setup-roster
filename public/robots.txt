@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /share/*
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Block sensitive paths (if any in future)
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
