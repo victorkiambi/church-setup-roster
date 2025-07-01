@@ -18,19 +18,23 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AssignMembers } from '@/components/assign-members'
-import { eventsApi, type Event, type Member } from '@/lib/supabase'
+import { DeleteConfirmation } from '@/components/delete-confirmation'
+import { eventsApi, supabase, type Event, type Member } from '@/lib/supabase'
 import { formatDate, getNextSundays } from '@/lib/utils'
+import { autoArchivePastEvents } from '@/lib/auto-archive'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, Plus, RefreshCw, Zap } from 'lucide-react'
+import { Calendar as CalendarIcon, Plus, RefreshCw, Zap, Archive, Trash2, Eye } from 'lucide-react'
 
 type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventWithAssignments[]>([])
+  const [archivedEvents, setArchivedEvents] = useState<EventWithAssignments[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddSpecial, setShowAddSpecial] = useState(false)
   const [showGenerateSundays, setShowGenerateSundays] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
   
   // Add Special Event Form
   const [specialEventForm, setSpecialEventForm] = useState({
@@ -40,13 +44,53 @@ export default function EventsPage() {
 
   const loadEvents = async () => {
     try {
-      const data = await eventsApi.getWithAssignments()
-      setEvents(data)
+      // Auto-archive past events first
+      await autoArchivePastEvents()
+      
+      // Load active and archived events
+      const [activeData, archivedData] = await Promise.all([
+        eventsApi.getWithAssignments(),
+        loadArchivedEvents()
+      ])
+      
+      setEvents(activeData)
+      setArchivedEvents(archivedData)
     } catch (error) {
       console.error('Error loading events:', error)
       alert('Failed to load events. Please check your connection.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadArchivedEvents = async () => {
+    try {
+      const archived = await eventsApi.getArchived()
+      // Get assignments for archived events
+      const archivedWithAssignments = await Promise.all(
+        archived.map(async (event) => {
+          const { data } = await supabase
+            .from('events')
+            .select(`
+              *,
+              assignments (
+                id,
+                member:members (
+                  id,
+                  name,
+                  phone
+                )
+              )
+            `)
+            .eq('id', event.id)
+            .single()
+          return data
+        })
+      )
+      return archivedWithAssignments.filter(Boolean)
+    } catch (error) {
+      console.error('Error loading archived events:', error)
+      return []
     }
   }
 
@@ -85,9 +129,24 @@ export default function EventsPage() {
     }
   }
 
+  const handleDeleteEvent = async (eventId: string) => {
+    await eventsApi.delete(eventId)
+    await loadEvents()
+  }
+
+  const handleArchiveEvent = async (eventId: string) => {
+    await eventsApi.archive(eventId)
+    await loadEvents()
+  }
+
+  const handleUnarchiveEvent = async (eventId: string) => {
+    await eventsApi.unarchive(eventId)
+    await loadEvents()
+  }
+
   useEffect(() => {
     loadEvents()
-  }, [])
+  }, [loadEvents])
 
   if (loading) {
     return (
@@ -113,6 +172,15 @@ export default function EventsPage() {
           <p className="text-muted-foreground">Manage Sunday services and special events</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowArchived(!showArchived)}
+            className={showArchived ? 'bg-gray-100' : ''}
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            {showArchived ? 'Hide' : 'View'} Archived ({archivedEvents.length})
+          </Button>
+          
           <Dialog open={showGenerateSundays} onOpenChange={setShowGenerateSundays}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -285,6 +353,28 @@ export default function EventsPage() {
                         </div>
                       )}
                       <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                      
+                      <DeleteConfirmation
+                        variant="archive"
+                        title="Archive Event"
+                        description={`Archive "${event.title}"? It will be moved to archived events.`}
+                        onConfirm={() => handleArchiveEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
+                      
+                      <DeleteConfirmation
+                        variant="delete"
+                        title="Delete Event"
+                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                        onConfirm={() => handleDeleteEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
                     </div>
                   </div>
                 ))}
@@ -337,6 +427,28 @@ export default function EventsPage() {
                         </div>
                       )}
                       <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                      
+                      <DeleteConfirmation
+                        variant="archive"
+                        title="Archive Event"
+                        description={`Archive "${event.title}"? It will be moved to archived events.`}
+                        onConfirm={() => handleArchiveEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
+                      
+                      <DeleteConfirmation
+                        variant="delete"
+                        title="Delete Event"
+                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                        onConfirm={() => handleDeleteEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
                     </div>
                   </div>
                 ))}
@@ -344,6 +456,78 @@ export default function EventsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Archived Events */}
+        {showArchived && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-4 w-4 text-gray-500" />
+                Archived Events ({archivedEvents.length})
+              </CardTitle>
+              <CardDescription>
+                Past events that have been automatically archived
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {archivedEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No archived events</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {archivedEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <h4 className="font-medium text-gray-700">{event.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(event.event_date)}
+                          </p>
+                        </div>
+                        <Badge variant={event.event_type === 'sunday' ? 'default' : 'secondary'} className="opacity-75">
+                          {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {event.assignments && event.assignments.length > 0 ? (
+                          <div className="text-sm text-muted-foreground mr-2">
+                            {event.assignments.map((a) => a.member.name).join(', ')}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground mr-2">
+                            No assignments
+                          </div>
+                        )}
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleUnarchiveEvent(event.id)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Restore
+                        </Button>
+                        
+                        <DeleteConfirmation
+                          variant="delete"
+                          title="Delete Archived Event"
+                          description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                          onConfirm={() => handleDeleteEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

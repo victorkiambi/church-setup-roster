@@ -13,6 +13,7 @@ CREATE TABLE events (
   title VARCHAR(200) NOT NULL,
   event_date DATE NOT NULL,
   event_type VARCHAR(20) DEFAULT 'sunday', -- 'sunday', 'special'
+  is_archived BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -32,12 +33,18 @@ INSERT INTO members (name, phone) VALUES
 ('David Brown', '+254734567890'),
 ('Sarah Wilson', '+254745678901');
 
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_events_is_archived ON events(is_archived);
+CREATE INDEX IF NOT EXISTS idx_events_active_date ON events(is_archived, event_date) WHERE is_archived = false;
+CREATE INDEX IF NOT EXISTS idx_assignments_event_id ON assignments(event_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_member_id ON assignments(member_id);
+
 -- Insert next few Sundays
-INSERT INTO events (title, event_date, event_type) VALUES
-('Sunday Service', '2024-12-15', 'sunday'),
-('Sunday Service', '2024-12-22', 'sunday'),
-('Sunday Service', '2024-12-29', 'sunday'),
-('Christmas Prep', '2024-12-20', 'special');
+INSERT INTO events (title, event_date, event_type, is_archived) VALUES
+('Sunday Service', '2024-12-15', 'sunday', false),
+('Sunday Service', '2024-12-22', 'sunday', false),
+('Sunday Service', '2024-12-29', 'sunday', false),
+('Christmas Prep', '2024-12-20', 'special', false);
 
 -- Sample assignments
 INSERT INTO assignments (event_id, member_id) 

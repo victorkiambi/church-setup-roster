@@ -84,8 +84,20 @@ export const membersApi = {
 
 // Database operations for Events
 export const eventsApi = {
-  // Get all events
+  // Get all events (non-archived)
   async getAll() {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('is_archived', false)
+      .order('event_date')
+    
+    if (error) throw error
+    return data as Event[]
+  },
+
+  // Get all events including archived
+  async getAllIncludingArchived() {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -95,12 +107,25 @@ export const eventsApi = {
     return data as Event[]
   },
 
-  // Get upcoming events
+  // Get archived events
+  async getArchived() {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('is_archived', true)
+      .order('event_date', { ascending: false })
+    
+    if (error) throw error
+    return data as Event[]
+  },
+
+  // Get upcoming events (non-archived)
   async getUpcoming() {
     const today = new Date().toISOString().split('T')[0]
     const { data, error } = await supabase
       .from('events')
       .select('*')
+      .eq('is_archived', false)
       .gte('event_date', today)
       .order('event_date')
     
@@ -108,7 +133,7 @@ export const eventsApi = {
     return data as Event[]
   },
 
-  // Get events with assignments
+  // Get events with assignments (non-archived)
   async getWithAssignments() {
     const { data, error } = await supabase
       .from('events')
@@ -123,6 +148,7 @@ export const eventsApi = {
           )
         )
       `)
+      .eq('is_archived', false)
       .order('event_date')
     
     if (error) throw error
@@ -177,7 +203,47 @@ export const eventsApi = {
     return data as Event
   },
 
-  // Delete event
+  // Archive event
+  async archive(id: string) {
+    const { data, error } = await supabase
+      .from('events')
+      .update({ is_archived: true })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data as Event
+  },
+
+  // Unarchive event
+  async unarchive(id: string) {
+    const { data, error } = await supabase
+      .from('events')
+      .update({ is_archived: false })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data as Event
+  },
+
+  // Auto-archive past events
+  async autoArchivePastEvents() {
+    const today = new Date().toISOString().split('T')[0]
+    const { data, error } = await supabase
+      .from('events')
+      .update({ is_archived: true })
+      .lt('event_date', today)
+      .eq('is_archived', false)
+      .select()
+    
+    if (error) throw error
+    return data as Event[]
+  },
+
+  // Delete event (permanent)
   async delete(id: string) {
     const { error } = await supabase
       .from('events')
@@ -266,6 +332,7 @@ export interface Event {
   title: string
   event_date: string
   event_type: 'sunday' | 'special'
+  is_archived: boolean
   created_at: string
 }
 

@@ -174,12 +174,57 @@
 
 ---
 
+## Phase 7: Event Management & Archiving
+**Status:** ✅ Completed
+**Actual Time:** 3 hours
+
+### Tasks:
+1. Add event deletion functionality
+2. Implement event archiving system
+3. Auto-archive past events
+4. Create archive management interface
+5. Add confirmation dialogs
+6. Update database schema
+
+### Components Added:
+- `components/delete-confirmation.tsx`
+- `lib/auto-archive.ts`
+- Archive management in events page
+- Auto-archiving logic in homepage
+
+### Database Changes:
+- Added `is_archived` boolean column to events table
+- Updated API functions to filter archived events
+- Added archive/unarchive operations
+
+### Deliverables:
+- Event deletion with confirmation
+- Automatic archiving of past events
+- Archive viewing and management
+- Restore archived events functionality
+
+### Success Criteria:
+- Past events auto-archive daily
+- Users can manually archive/delete events
+- Archived events can be viewed and restored
+- Confirmation dialogs prevent accidental deletions
+- Main views only show active events
+
+---
+
 ## Technical Notes
 
 ### Database Relationships:
 - Members → Assignments (one-to-many)
 - Events → Assignments (one-to-many)
 - Unique constraint on (event_id, member_id)
+- Events have `is_archived` flag for soft deletion
+
+### Database Schema Updates:
+```sql
+-- Added to events table
+ALTER TABLE events ADD COLUMN is_archived BOOLEAN DEFAULT false;
+```
 
 ### Key Dependencies:
 ```json
@@ -207,5 +252,20 @@ After each phase completion:
 3. Update time estimates for remaining phases
 4. Document any technical decisions made
 
-**Last Updated:** Initial creation
-**Next Phase:** Phase 1 - Project Foundation
+**Last Updated:** Event Management & Archiving Phase Completion
+**Project Status:** Feature Complete - Ready for Production
+
+### Recent Additions (Latest Phase):
+- ✅ Event deletion with confirmation dialogs
+- ✅ Automatic archiving of past events 
+- ✅ Archive management interface
+- ✅ Restore archived events functionality
+- ✅ Database schema updates for archiving
+- ✅ Auto-archive logic runs on app load
+
+### Architecture Improvements:
+- Confirmation dialogs prevent accidental data loss
+- Soft deletion system maintains data integrity
+- Auto-archiving keeps main views clean
+- Archive system provides audit trail
+- Scalable for long-term data management

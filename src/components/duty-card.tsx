@@ -4,20 +4,36 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AssignMembers } from '@/components/assign-members'
+import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { formatDate, isUpcoming } from '@/lib/utils'
-import { type Event, type Member } from '@/lib/supabase'
-import { Calendar, Users, Clock, Share2 } from 'lucide-react'
+import { eventsApi, type Event, type Member } from '@/lib/supabase'
+import { Calendar, Users, Clock, Share2, Trash2, Archive } from 'lucide-react'
 
 interface DutyCardProps {
   event: Event & { assignments: Array<{ id: string; member: Member }> }
   isNext?: boolean
   onAssignmentsChanged?: () => void
+  showActions?: boolean
 }
 
-export function DutyCard({ event, isNext = false, onAssignmentsChanged }: DutyCardProps) {
+export function DutyCard({ event, isNext = false, onAssignmentsChanged, showActions = true }: DutyCardProps) {
   const assignedMembers = event.assignments?.map(a => a.member) || []
   const isUpcomingEvent = isUpcoming(event.event_date)
   
+  const handleDelete = async () => {
+    await eventsApi.delete(event.id)
+    if (onAssignmentsChanged) {
+      onAssignmentsChanged()
+    }
+  }
+
+  const handleArchive = async () => {
+    await eventsApi.archive(event.id)
+    if (onAssignmentsChanged) {
+      onAssignmentsChanged()
+    }
+  }
+
   const shareEvent = () => {
     const members = assignedMembers.length > 0 
       ? assignedMembers.map(m => m.name).join(', ')
@@ -147,18 +163,52 @@ View full details: ${shareUrl}`
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            {onAssignmentsChanged && (
-              <AssignMembers event={event} onAssignmentsChanged={onAssignmentsChanged} />
-            )}
-            <Button 
-              onClick={shareEvent}
-              className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-sm font-medium py-3"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share via WhatsApp
-            </Button>
-          </div>
+          {showActions && (
+            <div className="space-y-3">
+              {/* Management Actions */}
+              {onAssignmentsChanged && (
+                <div className="flex gap-2 justify-end">
+                  <DeleteConfirmation
+                    variant="archive"
+                    title="Archive Event"
+                    description={`Are you sure you want to archive "${event.title}"? This will remove it from the main view but keep it for historical records.`}
+                    onConfirm={handleArchive}
+                  >
+                    <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700 hover:border-orange-200">
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </Button>
+                  </DeleteConfirmation>
+                  
+                  <DeleteConfirmation
+                    variant="delete"
+                    title="Delete Event"
+                    description={`Are you sure you want to permanently delete "${event.title}"? This action cannot be undone and will also remove all assignments.`}
+                    onConfirm={handleDelete}
+                  >
+                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:border-red-200">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </DeleteConfirmation>
+                </div>
+              )}
+              
+              {/* Primary Actions */}
+              <div className="flex gap-3">
+                {onAssignmentsChanged && (
+                  <AssignMembers event={event} onAssignmentsChanged={onAssignmentsChanged} />
+                )}
+                <Button 
+                  onClick={shareEvent}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-sm font-medium py-3"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share via WhatsApp
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

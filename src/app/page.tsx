@@ -9,6 +9,7 @@ import { AddMember } from '@/components/add-member'
 import { DutyCardSkeleton, StatsCardSkeleton, MemberCardSkeleton } from '@/components/loading-skeleton'
 import { eventsApi, membersApi, type Event, type Member } from '@/lib/supabase'
 import { isUpcoming } from '@/lib/utils'
+import { autoArchivePastEvents } from '@/lib/auto-archive'
 import { Calendar, Users, Zap, ArrowRight, RefreshCw, Share2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -39,6 +40,8 @@ export default function Home() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+    // Auto-archive past events before loading
+    await autoArchivePastEvents()
     await Promise.all([loadEvents(), loadMembers()])
     setLoading(false)
   }, [loadEvents, loadMembers])
