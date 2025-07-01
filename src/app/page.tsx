@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,29 +19,29 @@ export default function Home() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       const data = await eventsApi.getWithAssignments()
       setEvents(data)
     } catch (error) {
       console.error('Error loading events:', error)
     }
-  }
+  }, [])
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       const data = await membersApi.getAll()
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
     }
-  }
+  }, [])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     await Promise.all([loadEvents(), loadMembers()])
     setLoading(false)
-  }
+  }, [loadEvents, loadMembers])
 
   useEffect(() => {
     loadData()

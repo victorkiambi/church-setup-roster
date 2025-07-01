@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,9 +17,9 @@ export default function ShareEventPage() {
   const params = useParams()
   const [event, setEvent] = useState<EventWithAssignments | null>(null)
   const [loading, setLoading] = useState(true)
-  const [, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const loadEvent = async () => {
+  const loadEvent = useCallback(async () => {
     try {
       const events = await eventsApi.getWithAssignments()
       const foundEvent = events.find(e => e.id === params.eventId)
@@ -35,7 +35,7 @@ export default function ShareEventPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.eventId])
 
   const shareEvent = () => {
     if (!event) return
@@ -74,7 +74,7 @@ View full roster: ${window.location.origin}`
 
   useEffect(() => {
     loadEvent()
-  }, [params.eventId, loadEvent])
+  }, [loadEvent])
 
   if (loading) {
     return (
@@ -143,7 +143,7 @@ View full roster: ${window.location.origin}`
               Share This Event
             </CardTitle>
             <CardDescription>
-              Share this event with others to let them know who's on duty
+              Share this event with others to let them know who&apos;s on duty
             </CardDescription>
           </CardHeader>
           <CardContent>

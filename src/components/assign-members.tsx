@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -35,23 +35,23 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
   const [selectedMember, setSelectedMember] = useState<string>('')
   const [assignments, setAssignments] = useState<Array<{ id: string; member: Member }>>([])
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       const data = await membersApi.getActive()
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
     }
-  }
+  }, [])
 
-  const loadAssignments = async () => {
+  const loadAssignments = useCallback(async () => {
     try {
       const data = await assignmentsApi.getByEvent(event.id)
       setAssignments(data)
     } catch (error) {
       console.error('Error loading assignments:', error)
     }
-  }
+  }, [event.id])
 
   const addAssignment = async () => {
     if (!selectedMember) return
