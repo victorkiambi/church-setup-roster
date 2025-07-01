@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { membersApi, assignmentsApi, type Member, type Event, type Assignment } from '@/lib/supabase'
+import { membersApi, assignmentsApi, type Member, type Event } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 import { Users, X } from 'lucide-react'
 
@@ -90,7 +90,7 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
       loadMembers()
       loadAssignments()
     }
-  }, [open])
+  }, [open, loadMembers, loadAssignments])
 
   const assignedMemberIds = assignments.map(a => a.member.id)
   const availableMembers = members.filter(m => !assignedMemberIds.includes(m.id))

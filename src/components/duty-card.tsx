@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AssignMembers } from '@/components/assign-members'
 import { formatDate, isUpcoming } from '@/lib/utils'
 import { type Event, type Member } from '@/lib/supabase'
-import { Calendar, Users, Clock, Share2, UserPlus } from 'lucide-react'
+import { Calendar, Users, Clock, Share2 } from 'lucide-react'
 
 interface DutyCardProps {
   event: Event & { assignments: Array<{ id: string; member: Member }> }

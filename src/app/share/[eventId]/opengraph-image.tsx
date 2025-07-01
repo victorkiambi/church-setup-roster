@@ -102,7 +102,7 @@ export default async function Image({ params }: { params: { eventId: string } })
       ),
       { ...size }
     )
-  } catch (error) {
+  } catch {
     return new ImageResponse(
       (
         <div

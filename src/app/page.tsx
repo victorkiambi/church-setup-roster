@@ -8,7 +8,7 @@ import { DutyCard } from '@/components/duty-card'
 import { AddMember } from '@/components/add-member'
 import { DutyCardSkeleton, StatsCardSkeleton, MemberCardSkeleton } from '@/components/loading-skeleton'
 import { eventsApi, membersApi, type Event, type Member } from '@/lib/supabase'
-import { formatDate, isUpcoming } from '@/lib/utils'
+import { isUpcoming } from '@/lib/utils'
 import { Calendar, Users, Zap, ArrowRight, RefreshCw, Share2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -45,7 +45,7 @@ export default function Home() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [loadData])
 
   if (loading) {
     return (
@@ -58,7 +58,7 @@ export default function Home() {
                 <Calendar className="h-8 w-8 text-white" />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Who's On Duty?
+                Who&apos;s On Duty?
               </h1>
             </div>
             <p className="text-gray-600 text-xl font-medium">
@@ -136,7 +136,7 @@ export default function Home() {
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Who's On Duty?
+              Who&apos;s On Duty?
             </h1>
           </div>
           <p className="text-gray-600 text-xl font-medium">
@@ -152,7 +152,7 @@ export default function Home() {
                 <div className="p-2 bg-orange-100 rounded-full">
                   <Zap className="h-5 w-5 text-orange-600" />
                 </div>
-                Today's Events
+                Today&apos;s Events
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -510,7 +510,7 @@ ${window.location.origin}`
                     try {
                       await navigator.clipboard.writeText(window.location.origin)
                       alert('Link copied to clipboard!')
-                    } catch (error) {
+                    } catch {
                       alert('Failed to copy link')
                     }
                   }}

@@ -15,10 +15,9 @@ type EventWithAssignments = Event & { assignments: Array<{ id: string; member: M
 
 export default function ShareEventPage() {
   const params = useParams()
-  const router = useRouter()
   const [event, setEvent] = useState<EventWithAssignments | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
 
   const loadEvent = async () => {
     try {
@@ -68,14 +67,14 @@ View full roster: ${window.location.origin}`
     try {
       await navigator.clipboard.writeText(window.location.href)
       alert('Link copied to clipboard!')
-    } catch (error) {
+    } catch {
       alert('Failed to copy link')
     }
   }
 
   useEffect(() => {
     loadEvent()
-  }, [params.eventId])
+  }, [params.eventId, loadEvent])
 
   if (loading) {
     return (
@@ -98,7 +97,7 @@ View full roster: ${window.location.origin}`
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <h2 className="text-xl font-semibold mb-2">Event Not Found</h2>
                 <p className="text-gray-600 mb-4">
-                  {error || 'The event you\'re looking for doesn\'t exist or has been removed.'}
+                  The event you&apos;re looking for doesn&apos;t exist or has been removed.
                 </p>
                 <Link href="/">
                   <Button>

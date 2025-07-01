@@ -1,6 +1,7 @@
 'use client'
 
 import { Calendar } from 'lucide-react'
+import Link from 'next/link'
 
 export function Navigation() {
   return (
@@ -17,15 +18,15 @@ export function Navigation() {
               </h1>
             </div>
             <div className="hidden md:flex space-x-6">
-              <a href="/" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
+              <Link href="/" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
                 Home
-              </a>
-              <a href="/members" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
+              </Link>
+              <Link href="/members" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
                 Members
-              </a>
-              <a href="/events" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
+              </Link>
+              <Link href="/events" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50">
                 Events
-              </a>
+              </Link>
             </div>
           </div>
           <div className="md:hidden">
