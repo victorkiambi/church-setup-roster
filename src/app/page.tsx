@@ -40,10 +40,20 @@ export default function Home() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    // Auto-archive past events before loading
-    await autoArchivePastEvents()
-    await Promise.all([loadEvents(), loadMembers()])
-    setLoading(false)
+    try {
+      // Auto-archive past events before loading
+      await autoArchivePastEvents()
+      
+      // Generate missing Sundays for current month
+      await eventsApi.generateMissingSundaysForMonth()
+      
+      // Load events and members
+      await Promise.all([loadEvents(), loadMembers()])
+    } catch (error) {
+      console.error('Error in loadData:', error)
+    } finally {
+      setLoading(false)
+    }
   }, [loadEvents, loadMembers])
 
   useEffect(() => {
@@ -111,9 +121,17 @@ export default function Home() {
     .filter(e => isUpcoming(e.event_date))
     .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
 
+  // Get all Sunday events for current month
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  
   const nextSundays = upcomingEvents
-    .filter(e => e.event_type === 'sunday')
-    .slice(0, 3)
+    .filter(e => {
+      if (e.event_type !== 'sunday') return false
+      const eventDate = new Date(e.event_date)
+      return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
+    })
 
   const specialEvents = upcomingEvents
     .filter(e => e.event_type === 'special')

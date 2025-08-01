@@ -190,6 +190,52 @@ export const eventsApi = {
     return data as Event[]
   },
 
+  // Generate missing Sundays for current month (safe - won't affect existing events)
+  async generateMissingSundaysForMonth(year?: number, month?: number) {
+    const { getAllSundaysInMonth, formatDateString } = await import('./utils')
+    
+    // Get all Sundays for the specified month (defaults to current month)
+    const allSundays = getAllSundaysInMonth(year, month)
+    
+    // Get existing Sunday events for this month
+    const startOfMonth = new Date(year || new Date().getFullYear(), month !== undefined ? month : new Date().getMonth(), 1)
+    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0)
+    
+    const { data: existingEvents } = await supabase
+      .from('events')
+      .select('event_date')
+      .eq('event_type', 'sunday')
+      .gte('event_date', formatDateString(startOfMonth))
+      .lte('event_date', formatDateString(endOfMonth))
+    
+    const existingDates = new Set(existingEvents?.map(e => e.event_date) || [])
+    
+    // Find missing Sundays
+    const missingSundays = allSundays
+      .filter(sunday => {
+        const dateStr = formatDateString(sunday)
+        return !existingDates.has(dateStr)
+      })
+      .map(sunday => ({
+        title: 'Sunday Service',
+        event_date: formatDateString(sunday),
+        event_type: 'sunday' as const
+      }))
+    
+    if (missingSundays.length === 0) {
+      return [] // No missing Sundays
+    }
+    
+    // Insert only the missing Sundays
+    const { data, error } = await supabase
+      .from('events')
+      .insert(missingSundays)
+      .select()
+    
+    if (error) throw error
+    return data as Event[]
+  },
+
   // Update event
   async update(id: string, updates: Partial<Event>) {
     const { data, error } = await supabase

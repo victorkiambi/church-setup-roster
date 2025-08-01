@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,7 +42,7 @@ export default function EventsPage() {
     date: undefined as Date | undefined
   })
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       // Auto-archive past events first
       await autoArchivePastEvents()
@@ -61,7 +61,7 @@ export default function EventsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const loadArchivedEvents = async () => {
     try {
@@ -159,6 +159,23 @@ export default function EventsPage() {
     )
   }
 
+  // Organize Sunday events by current month vs other months
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  
+  const currentMonthSundays = events.filter(e => {
+    if (e.event_type !== 'sunday') return false
+    const eventDate = new Date(e.event_date)
+    return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
+  })
+  
+  const otherSundays = events.filter(e => {
+    if (e.event_type !== 'sunday') return false
+    const eventDate = new Date(e.event_date)
+    return !(eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear)
+  })
+  
   const sundayEvents = events.filter(e => e.event_type === 'sunday')
   const specialEvents = events.filter(e => e.event_type === 'special')
   const upcomingEvents = events.filter(e => new Date(e.event_date) >= new Date())
@@ -309,21 +326,21 @@ export default function EventsPage() {
 
       {/* Events List */}
       <div className="space-y-6">
-        {/* Sunday Services */}
+        {/* Current Month Sundays */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-              Sunday Services ({sundayEvents.length})
+              Current Month Sundays ({currentMonthSundays.length})
             </CardTitle>
             <CardDescription>
-              Regular weekly Sunday services
+              {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Sunday services
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {sundayEvents.length === 0 ? (
+            {currentMonthSundays.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No Sunday services found</p>
+                <p className="text-muted-foreground mb-4">No Sunday services for this month</p>
                 <Button variant="outline" onClick={() => setShowGenerateSundays(true)}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Generate Sunday Services
@@ -331,8 +348,8 @@ export default function EventsPage() {
               </div>
             ) : (
               <div className="grid gap-3">
-                {sundayEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {currentMonthSundays.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
                     <div className="flex items-center gap-3">
                       <div>
                         <h4 className="font-medium">{event.title}</h4>
@@ -382,6 +399,72 @@ export default function EventsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Other Sundays */}
+        {otherSundays.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-gray-400 rounded-full"></div>
+                Other Sundays ({otherSundays.length})
+              </CardTitle>
+              <CardDescription>
+                Sunday services from other months
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3">
+                {otherSundays.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h4 className="font-medium">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(event.event_date)}
+                        </p>
+                      </div>
+                      <Badge variant="outline">Sunday</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {event.assignments && event.assignments.length > 0 ? (
+                        <div className="text-sm text-muted-foreground mr-2">
+                          {event.assignments.map((a) => a.member.name).join(', ')}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground mr-2">
+                          No assignments
+                        </div>
+                      )}
+                      <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                      
+                      <DeleteConfirmation
+                        variant="archive"
+                        title="Archive Event"
+                        description={`Archive "${event.title}"? It will be moved to archived events.`}
+                        onConfirm={() => handleArchiveEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
+                      
+                      <DeleteConfirmation
+                        variant="delete"
+                        title="Delete Event"
+                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                        onConfirm={() => handleDeleteEvent(event.id)}
+                      >
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DeleteConfirmation>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Special Events */}
         <Card>
