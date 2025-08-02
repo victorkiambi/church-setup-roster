@@ -22,9 +22,10 @@ import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { eventsApi, supabase, type Event, type Member } from '@/lib/supabase'
 import { formatDate, getNextSundays } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
+import { exportCurrentMonthEvents } from '@/lib/pdf-export'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, Plus, RefreshCw, Zap, Archive, Trash2, Eye } from 'lucide-react'
+import { Calendar as CalendarIcon, Plus, RefreshCw, Zap, Archive, Trash2, Eye, Download } from 'lucide-react'
 
 type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
 
@@ -144,6 +145,15 @@ export default function EventsPage() {
     await loadEvents()
   }
 
+  const handleExportPDF = async () => {
+    try {
+      await exportCurrentMonthEvents(events)
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      alert('Failed to export PDF. Please try again.')
+    }
+  }
+
   useEffect(() => {
     loadEvents()
   }, [loadEvents])
@@ -189,6 +199,15 @@ export default function EventsPage() {
           <p className="text-muted-foreground">Manage Sunday services and special events</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExportPDF}
+            className="text-green-600 hover:text-green-700"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          
           <Button 
             variant="outline" 
             onClick={() => setShowArchived(!showArchived)}
@@ -271,7 +290,6 @@ export default function EventsPage() {
                           mode="single"
                           selected={specialEventForm.date}
                           onSelect={(date) => setSpecialEventForm({ ...specialEventForm, date })}
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
