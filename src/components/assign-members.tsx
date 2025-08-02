@@ -98,7 +98,7 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="default" className="h-10">
           <Users className="h-4 w-4 mr-2" />
           Assign ({assignments.length})
         </Button>

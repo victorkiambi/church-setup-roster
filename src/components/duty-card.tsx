@@ -7,7 +7,7 @@ import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { formatDate, isUpcoming } from '@/lib/utils'
 import { eventsApi, type Event, type Member } from '@/lib/supabase'
-import { Calendar, Users, Clock, Share2, Trash2, Archive } from 'lucide-react'
+import { Calendar, Users, Clock, Share2, Trash2, Archive, FileDown } from 'lucide-react'
 
 interface DutyCardProps {
   event: Event & { assignments: Array<{ id: string; member: Member }> }
@@ -57,6 +57,18 @@ View full details: ${shareUrl}`
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
       window.open(whatsappUrl, '_blank')
     }
+  }
+
+  const exportToPDF = () => {
+    const exportUrl = `/api/export-pdf?eventId=${event.id}`
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a')
+    link.href = exportUrl
+    link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.event_date}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -174,7 +186,7 @@ View full details: ${shareUrl}`
                     description={`Are you sure you want to archive "${event.title}"? This will remove it from the main view but keep it for historical records.`}
                     onConfirm={handleArchive}
                   >
-                    <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700 hover:border-orange-200">
+                    <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700 hover:border-orange-200 h-9">
                       <Archive className="h-4 w-4 mr-2" />
                       Archive
                     </Button>
@@ -186,7 +198,7 @@ View full details: ${shareUrl}`
                     description={`Are you sure you want to permanently delete "${event.title}"? This action cannot be undone and will also remove all assignments.`}
                     onConfirm={handleDelete}
                   >
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:border-red-200">
+                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:border-red-200 h-9">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
@@ -195,17 +207,29 @@ View full details: ${shareUrl}`
               )}
               
               {/* Primary Actions */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-stretch">
                 {onAssignmentsChanged && (
                   <AssignMembers event={event} onAssignmentsChanged={onAssignmentsChanged} />
                 )}
-                <Button 
-                  onClick={shareEvent}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-sm font-medium py-3"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share via WhatsApp
-                </Button>
+                <div className="flex gap-2 flex-1">
+                  <Button 
+                    onClick={exportToPDF}
+                    variant="outline"
+                    size="default"
+                    className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 font-medium h-10"
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    
+                  </Button>
+                  <Button 
+                    onClick={shareEvent}
+                    size="default"
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-sm font-medium h-10"
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                  
+                  </Button>
+                </div>
               </div>
             </div>
           )}
