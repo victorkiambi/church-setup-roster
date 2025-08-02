@@ -191,150 +191,157 @@ export default function EventsPage() {
   const upcomingEvents = events.filter(e => new Date(e.event_date) >= new Date())
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-4 sm:py-6 px-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="text-center sm:text-left">
           <h1 className="text-2xl font-bold">Events & Assignments</h1>
           <p className="text-muted-foreground">Manage Sunday services and special events</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleExportPDF}
-            className="text-green-600 hover:text-green-700"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
-          </Button>
+        
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleExportPDF}
+              className="text-green-600 hover:text-green-700"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowArchived(!showArchived)}
+              className={showArchived ? 'bg-gray-100' : ''}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArchived ? 'Hide' : 'View'} Archived ({archivedEvents.length})
+            </Button>
+          </div>
           
-          <Button 
-            variant="outline" 
-            onClick={() => setShowArchived(!showArchived)}
-            className={showArchived ? 'bg-gray-100' : ''}
-          >
-            <Archive className="h-4 w-4 mr-2" />
-            {showArchived ? 'Hide' : 'View'} Archived ({archivedEvents.length})
-          </Button>
-          
-          <Dialog open={showGenerateSundays} onOpenChange={setShowGenerateSundays}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Generate Sundays
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Generate Sunday Services</DialogTitle>
-                <DialogDescription>
-                  This will create 8 weeks of Sunday services starting from the next Sunday.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowGenerateSundays(false)}>
-                  Cancel
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Dialog open={showGenerateSundays} onOpenChange={setShowGenerateSundays}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Generate Sundays
                 </Button>
-                <Button onClick={generateSundays}>
-                  Generate 8 Sundays
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Generate Sunday Services</DialogTitle>
+                  <DialogDescription>
+                    This will create 8 weeks of Sunday services starting from the next Sunday.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setShowGenerateSundays(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button onClick={generateSundays} className="w-full sm:w-auto">
+                    Generate 8 Sundays
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
-          <Dialog open={showAddSpecial} onOpenChange={setShowAddSpecial}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Special Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Special Event</DialogTitle>
-                <DialogDescription>
-                  Create a special event (e.g., Christmas Prep, Easter Service)
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
-                    Title *
-                  </Label>
-                  <Input
-                    id="title"
-                    value={specialEventForm.title}
-                    onChange={(e) => setSpecialEventForm({ ...specialEventForm, title: e.target.value })}
-                    className="col-span-3"
-                    placeholder="Christmas Prep"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Date *</Label>
-                  <div className="col-span-3">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !specialEventForm.date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {specialEventForm.date ? format(specialEventForm.date, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={specialEventForm.date}
-                          onSelect={(date) => setSpecialEventForm({ ...specialEventForm, date })}
-                        />
-                      </PopoverContent>
-                    </Popover>
+            <Dialog open={showAddSpecial} onOpenChange={setShowAddSpecial}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Special Event
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add Special Event</DialogTitle>
+                  <DialogDescription>
+                    Create a special event (e.g., Christmas Prep, Easter Service)
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                    <Label htmlFor="title" className="text-left sm:text-right">
+                      Title *
+                    </Label>
+                    <Input
+                      id="title"
+                      value={specialEventForm.title}
+                      onChange={(e) => setSpecialEventForm({ ...specialEventForm, title: e.target.value })}
+                      className="col-span-1 sm:col-span-3"
+                      placeholder="Christmas Prep"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                    <Label className="text-left sm:text-right">Date *</Label>
+                    <div className="col-span-1 sm:col-span-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !specialEventForm.date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {specialEventForm.date ? format(specialEventForm.date, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={specialEventForm.date}
+                            onSelect={(date) => setSpecialEventForm({ ...specialEventForm, date })}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowAddSpecial(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={addSpecialEvent}
-                  disabled={!specialEventForm.title.trim() || !specialEventForm.date}
-                >
-                  Add Event
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setShowAddSpecial(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={addSpecialEvent}
+                    disabled={!specialEventForm.title.trim() || !specialEventForm.date}
+                    className="w-full sm:w-auto"
+                  >
+                    Add Event
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Stats - Mobile Optimized */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{upcomingEvents.length}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold">{upcomingEvents.length}</div>
             <p className="text-xs text-muted-foreground">Upcoming Events</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{sundayEvents.length}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold">{sundayEvents.length}</div>
             <p className="text-xs text-muted-foreground">Sunday Services</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{specialEvents.length}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold">{specialEvents.length}</div>
             <p className="text-xs text-muted-foreground">Special Events</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold">
               {events.reduce((sum, e) => sum + (e.assignments?.length || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">Total Assignments</p>
@@ -367,49 +374,59 @@ export default function EventsPage() {
             ) : (
               <div className="grid gap-3">
                 {currentMonthSundays.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <h4 className="font-medium">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(event.event_date)}
-                        </p>
+                  <div key={event.id} className="flex flex-col p-3 border rounded-lg bg-blue-50 gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium">{event.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(event.event_date)}
+                          </p>
+                        </div>
+                        <Badge variant="default" className="flex-shrink-0">Sunday</Badge>
                       </div>
-                      <Badge variant="default">Sunday</Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {event.assignments && event.assignments.length > 0 ? (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          {event.assignments.map((a) => a.member.name).join(', ')}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          No assignments
-                        </div>
-                      )}
-                      <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                    
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm text-muted-foreground">
+                        {event.assignments && event.assignments.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {event.assignments.map((a, index) => (
+                              <span key={a.id} className="inline-block">
+                                {a.member.name}{index < event.assignments.length - 1 ? ',' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No assignments</span>
+                        )}
+                      </div>
                       
-                      <DeleteConfirmation
-                        variant="archive"
-                        title="Archive Event"
-                        description={`Archive "${event.title}"? It will be moved to archived events.`}
-                        onConfirm={() => handleArchiveEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
-                      
-                      <DeleteConfirmation
-                        variant="delete"
-                        title="Delete Event"
-                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
-                        onConfirm={() => handleDeleteEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
+                      <div className="flex items-center gap-2">
+                        <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                        
+                        <DeleteConfirmation
+                          variant="archive"
+                          title="Archive Event"
+                          description={`Archive "${event.title}"? It will be moved to archived events.`}
+                          onConfirm={() => handleArchiveEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                        
+                        <DeleteConfirmation
+                          variant="delete"
+                          title="Delete Event"
+                          description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                          onConfirm={() => handleDeleteEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -433,49 +450,59 @@ export default function EventsPage() {
             <CardContent>
               <div className="grid gap-3">
                 {otherSundays.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <h4 className="font-medium">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(event.event_date)}
-                        </p>
+                  <div key={event.id} className="flex flex-col p-3 border rounded-lg gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium">{event.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(event.event_date)}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="flex-shrink-0">Sunday</Badge>
                       </div>
-                      <Badge variant="outline">Sunday</Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {event.assignments && event.assignments.length > 0 ? (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          {event.assignments.map((a) => a.member.name).join(', ')}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          No assignments
-                        </div>
-                      )}
-                      <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                    
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm text-muted-foreground">
+                        {event.assignments && event.assignments.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {event.assignments.map((a, index) => (
+                              <span key={a.id} className="inline-block">
+                                {a.member.name}{index < event.assignments.length - 1 ? ',' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No assignments</span>
+                        )}
+                      </div>
                       
-                      <DeleteConfirmation
-                        variant="archive"
-                        title="Archive Event"
-                        description={`Archive "${event.title}"? It will be moved to archived events.`}
-                        onConfirm={() => handleArchiveEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
-                      
-                      <DeleteConfirmation
-                        variant="delete"
-                        title="Delete Event"
-                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
-                        onConfirm={() => handleDeleteEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
+                      <div className="flex items-center gap-2">
+                        <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                        
+                        <DeleteConfirmation
+                          variant="archive"
+                          title="Archive Event"
+                          description={`Archive "${event.title}"? It will be moved to archived events.`}
+                          onConfirm={() => handleArchiveEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                        
+                        <DeleteConfirmation
+                          variant="delete"
+                          title="Delete Event"
+                          description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                          onConfirm={() => handleDeleteEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -507,49 +534,59 @@ export default function EventsPage() {
             ) : (
               <div className="grid gap-3">
                 {specialEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <h4 className="font-medium">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(event.event_date)}
-                        </p>
+                  <div key={event.id} className="flex flex-col p-3 border rounded-lg gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium">{event.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(event.event_date)}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="flex-shrink-0">Special</Badge>
                       </div>
-                      <Badge variant="secondary">Special</Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {event.assignments && event.assignments.length > 0 ? (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          {event.assignments.map((a) => a.member.name).join(', ')}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground mr-2">
-                          No assignments
-                        </div>
-                      )}
-                      <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                    
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm text-muted-foreground">
+                        {event.assignments && event.assignments.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {event.assignments.map((a, index) => (
+                              <span key={a.id} className="inline-block">
+                                {a.member.name}{index < event.assignments.length - 1 ? ',' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No assignments</span>
+                        )}
+                      </div>
                       
-                      <DeleteConfirmation
-                        variant="archive"
-                        title="Archive Event"
-                        description={`Archive "${event.title}"? It will be moved to archived events.`}
-                        onConfirm={() => handleArchiveEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
-                      
-                      <DeleteConfirmation
-                        variant="delete"
-                        title="Delete Event"
-                        description={`Permanently delete "${event.title}"? This cannot be undone.`}
-                        onConfirm={() => handleDeleteEvent(event.id)}
-                      >
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </DeleteConfirmation>
+                      <div className="flex items-center gap-2">
+                        <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
+                        
+                        <DeleteConfirmation
+                          variant="archive"
+                          title="Archive Event"
+                          description={`Archive "${event.title}"? It will be moved to archived events.`}
+                          onConfirm={() => handleArchiveEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-orange-600 hover:text-orange-700">
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                        
+                        <DeleteConfirmation
+                          variant="delete"
+                          title="Delete Event"
+                          description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                          onConfirm={() => handleDeleteEvent(event.id)}
+                        >
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteConfirmation>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -578,49 +615,58 @@ export default function EventsPage() {
               ) : (
                 <div className="grid gap-3">
                   {archivedEvents.map((event) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <h4 className="font-medium text-gray-700">{event.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(event.event_date)}
-                          </p>
+                    <div key={event.id} className="flex flex-col p-3 border rounded-lg bg-gray-50 gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-gray-700">{event.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDate(event.event_date)}
+                            </p>
+                          </div>
+                          <Badge variant={event.event_type === 'sunday' ? 'default' : 'secondary'} className="opacity-75 flex-shrink-0">
+                            {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
+                          </Badge>
                         </div>
-                        <Badge variant={event.event_type === 'sunday' ? 'default' : 'secondary'} className="opacity-75">
-                          {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
-                        </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {event.assignments && event.assignments.length > 0 ? (
-                          <div className="text-sm text-muted-foreground mr-2">
-                            {event.assignments.map((a) => a.member.name).join(', ')}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground mr-2">
-                            No assignments
-                          </div>
-                        )}
+                      
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {event.assignments && event.assignments.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {event.assignments.map((a, index) => (
+                                <span key={a.id} className="inline-block">
+                                  {a.member.name}{index < event.assignments.length - 1 ? ',' : ''}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">No assignments</span>
+                          )}
+                        </div>
                         
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleUnarchiveEvent(event.id)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Restore
-                        </Button>
-                        
-                        <DeleteConfirmation
-                          variant="delete"
-                          title="Delete Archived Event"
-                          description={`Permanently delete "${event.title}"? This cannot be undone.`}
-                          onConfirm={() => handleDeleteEvent(event.id)}
-                        >
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleUnarchiveEvent(event.id)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            <span className="hidden sm:inline">Restore</span>
                           </Button>
-                        </DeleteConfirmation>
+                          
+                          <DeleteConfirmation
+                            variant="delete"
+                            title="Delete Archived Event"
+                            description={`Permanently delete "${event.title}"? This cannot be undone.`}
+                            onConfirm={() => handleDeleteEvent(event.id)}
+                          >
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </DeleteConfirmation>
+                        </div>
                       </div>
                     </div>
                   ))}

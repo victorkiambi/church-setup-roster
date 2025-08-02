@@ -63,31 +63,31 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-4 sm:py-8 px-4">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                <Calendar className="h-8 w-8 text-white" />
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
+              <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
+                <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 Who&apos;s On Duty?
               </h1>
             </div>
-            <p className="text-gray-600 text-xl font-medium">
+            <p className="text-gray-600 text-lg sm:text-xl font-medium">
               Church Setup Roster
             </p>
           </div>
 
           {/* Loading Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-10">
             {[...Array(4)].map((_, i) => (
               <StatsCardSkeleton key={i} />
             ))}
           </div>
 
           {/* Loading Content */}
-          <div className="grid gap-8 lg:grid-cols-3">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
               <div key={i}>
                 <div className="flex items-center justify-between mb-4">
@@ -149,29 +149,29 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-4 sm:py-8 px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-              <Calendar className="h-8 w-8 text-white" />
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
+            <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
+              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Who&apos;s On Duty?
             </h1>
           </div>
-          <p className="text-gray-600 text-xl font-medium">
+          <p className="text-gray-600 text-lg sm:text-xl font-medium">
             Church Setup Roster
           </p>
         </div>
 
         {/* Today's Events Alert */}
         {todayEvents.length > 0 && (
-          <Card className="mb-8 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-orange-800">
-                <div className="p-2 bg-orange-100 rounded-full">
-                  <Zap className="h-5 w-5 text-orange-600" />
+          <Card className="mb-6 sm:mb-8 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 sm:gap-3 text-orange-800 text-base sm:text-lg">
+                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-full">
+                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                 </div>
                 Today&apos;s Events
               </CardTitle>
@@ -179,17 +179,17 @@ export default function Home() {
             <CardContent>
               <div className="space-y-3">
                 {todayEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-900">{event.title}</span>
+                  <div key={event.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 shadow-sm gap-2 sm:gap-0">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</span>
                       <Badge 
-                        className="px-3 py-1 text-xs font-medium"
+                        className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium"
                         variant={event.event_type === 'sunday' ? 'default' : 'secondary'}
                       >
                         {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
                       </Badge>
                     </div>
-                    <div className="text-sm font-medium text-gray-600">
+                    <div className="text-xs sm:text-sm font-medium text-gray-600">
                       {event.assignments?.length > 0 
                         ? event.assignments.map(a => a.member.name).join(', ')
                         : 'No assignments'
@@ -204,9 +204,9 @@ export default function Home() {
 
         {/* Next Event Highlight */}
         {nextEvent && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
               Next Up
             </h2>
             <DutyCard event={nextEvent} isNext={true} onAssignmentsChanged={loadData} />
@@ -214,15 +214,15 @@ export default function Home() {
         )}
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-10">
           <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm hover:shadow-md transition-all duration-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500 rounded-lg">
-                  <Calendar className="h-5 w-5 text-white" />
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-700">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-700">
                     {upcomingEvents.length}
                   </div>
                   <p className="text-xs font-medium text-blue-600">Upcoming Events</p>
@@ -231,13 +231,13 @@ export default function Home() {
             </CardContent>
           </Card>
           <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-100 shadow-sm hover:shadow-md transition-all duration-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 rounded-lg">
-                  <Users className="h-5 w-5 text-white" />
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-700">
+                  <div className="text-xl sm:text-2xl font-bold text-green-700">
                     {upcomingEvents.filter(e => (e.assignments?.length || 0) > 0).length}
                   </div>
                   <p className="text-xs font-medium text-green-600">With Assignments</p>
@@ -246,13 +246,13 @@ export default function Home() {
             </CardContent>
           </Card>
           <Card className="border-0 bg-gradient-to-br from-purple-50 to-violet-100 shadow-sm hover:shadow-md transition-all duration-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500 rounded-lg">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-purple-500 rounded-lg">
                   <div className="h-3 w-3 bg-white rounded-full" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-700">
+                  <div className="text-xl sm:text-2xl font-bold text-purple-700">
                     {nextSundays.length}
                   </div>
                   <p className="text-xs font-medium text-purple-600">Next Sundays</p>
@@ -261,13 +261,13 @@ export default function Home() {
             </CardContent>
           </Card>
           <Card className="border-0 bg-gradient-to-br from-orange-50 to-amber-100 shadow-sm hover:shadow-md transition-all duration-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-500 rounded-lg">
-                  <Zap className="h-5 w-5 text-white" />
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-orange-500 rounded-lg">
+                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-700">
+                  <div className="text-xl sm:text-2xl font-bold text-orange-700">
                     {specialEvents.length}
                   </div>
                   <p className="text-xs font-medium text-orange-600">Special Events</p>
@@ -278,23 +278,23 @@ export default function Home() {
         </div>
 
         {/* Main Content */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
           {/* Sunday Services */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
                 <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
                 Next Sundays
               </h2>
               <Link href="/events">
-                <Button variant="ghost" size="sm">
-                  View All <ArrowRight className="h-4 w-4 ml-1" />
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                  View All <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 </Button>
               </Link>
             </div>
 
             {nextSundays.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {nextSundays.map((event, index) => (
                   <DutyCard 
                     key={event.id} 
@@ -307,12 +307,12 @@ export default function Home() {
             ) : (
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">No upcoming Sunday services</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Calendar className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4 text-sm sm:text-base">No upcoming Sunday services</p>
                     <Link href="/events">
-                      <Button>
-                        <RefreshCw className="h-4 w-4 mr-2" />
+                      <Button size="sm" className="text-xs sm:text-sm">
+                        <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         Generate Sundays
                       </Button>
                     </Link>
@@ -325,19 +325,19 @@ export default function Home() {
           {/* Special Events */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Zap className="h-5 w-5 text-orange-500" />
+              <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+                <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                 Special Events
               </h2>
               <Link href="/events">
-                <Button variant="ghost" size="sm">
-                  View All <ArrowRight className="h-4 w-4 ml-1" />
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                  View All <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 </Button>
               </Link>
             </div>
 
             {specialEvents.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {specialEvents.map((event) => (
                   <DutyCard key={event.id} event={event} onAssignmentsChanged={loadData} />
                 ))}
@@ -345,11 +345,11 @@ export default function Home() {
             ) : (
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500 mb-4">No special events scheduled</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Zap className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500 mb-4 text-sm sm:text-base">No special events scheduled</p>
                     <Link href="/events">
-                      <Button variant="outline">
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                         Add Special Event
                       </Button>
                     </Link>
@@ -362,23 +362,23 @@ export default function Home() {
           {/* Members Quick View */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
+              <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                 Team Members
               </h2>
               <Link href="/members">
-                <Button variant="ghost" size="sm">
-                  View All <ArrowRight className="h-4 w-4 ml-1" />
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                  View All <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 </Button>
               </Link>
             </div>
 
             {/* Add Member */}
             <Card className="mb-4 border-0 bg-gradient-to-r from-green-50 to-emerald-50">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 sm:pt-6">
                 <div className="text-center">
-                  <h3 className="font-semibold mb-2 text-gray-900">Add New Member</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h3 className="font-semibold mb-2 text-gray-900 text-sm sm:text-base">Add New Member</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4">
                     Quickly add a new team member
                   </p>
                   <AddMember onMemberAdded={loadMembers} />
@@ -389,18 +389,18 @@ export default function Home() {
             {/* Recent Members */}
             {activeMembers.length > 0 ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Active Members ({activeMembers.length})</CardTitle>
-                  <CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Active Members ({activeMembers.length})</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Recent team members
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {recentMembers.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 gap-2 sm:gap-0">
                         <div>
-                          <span className="font-semibold text-gray-900">{member.name}</span>
+                          <span className="font-semibold text-gray-900 text-sm sm:text-base">{member.name}</span>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge 
                               className={`px-2 py-0.5 text-xs ${
@@ -416,7 +416,7 @@ export default function Home() {
                         {member.phone && (
                           <a 
                             href={`tel:${member.phone}`}
-                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors"
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors self-start sm:self-auto"
                           >
                             Call
                           </a>
@@ -427,7 +427,7 @@ export default function Home() {
                   {activeMembers.length > 3 && (
                     <div className="text-center mt-4">
                       <Link href="/members">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                           View All {activeMembers.length} Members
                         </Button>
                       </Link>
@@ -438,9 +438,9 @@ export default function Home() {
             ) : (
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500 mb-4">No members yet</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Users className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500 mb-4 text-sm sm:text-base">No members yet</p>
                     <AddMember onMemberAdded={loadMembers} />
                   </div>
                 </CardContent>
@@ -450,15 +450,15 @@ export default function Home() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 sm:mt-8 grid gap-3 sm:gap-4 md:grid-cols-3">
           <Link href="/members">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Users className="h-8 w-8 text-blue-500" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
                   <div>
-                    <h3 className="font-medium">Manage Members</h3>
-                    <p className="text-sm text-muted-foreground">Add or edit church members</p>
+                    <h3 className="font-medium text-sm sm:text-base">Manage Members</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Add or edit church members</p>
                   </div>
                 </div>
               </CardContent>
@@ -467,12 +467,12 @@ export default function Home() {
 
           <Link href="/events">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-8 w-8 text-green-500" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
                   <div>
-                    <h3 className="font-medium">Manage Events</h3>
-                    <p className="text-sm text-muted-foreground">Create events and assignments</p>
+                    <h3 className="font-medium text-sm sm:text-base">Manage Events</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Create events and assignments</p>
                   </div>
                 </div>
               </CardContent>
@@ -480,12 +480,12 @@ export default function Home() {
           </Link>
 
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <RefreshCw className="h-8 w-8 text-purple-500" />
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <RefreshCw className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500" />
                 <div>
-                  <h3 className="font-medium">Refresh Data</h3>
-                  <p className="text-sm text-muted-foreground">Update the roster display</p>
+                  <h3 className="font-medium text-sm sm:text-base">Refresh Data</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Update the roster display</p>
                 </div>
               </div>
             </CardContent>
@@ -493,14 +493,14 @@ export default function Home() {
         </div>
 
         {/* Share Homepage */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 sm:mt-8 text-center">
           <Card className="border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardContent className="pt-6">
-              <h3 className="font-semibold mb-2 text-gray-900">Share This Roster</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <CardContent className="pt-4 sm:pt-6">
+              <h3 className="font-semibold mb-2 text-gray-900 text-sm sm:text-base">Share This Roster</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mb-4">
                 Share the church setup roster with your team
               </p>
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
                 <Button 
                   onClick={() => {
                     const message = `🏛️ Church Setup Roster
@@ -520,13 +520,15 @@ ${window.location.origin}`
                       window.open(whatsappUrl, '_blank')
                     }
                   }}
-                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0"
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 text-xs sm:text-sm"
                 >
-                  <Share2 className="h-4 w-4 mr-2" />
+                  <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Share Roster
                 </Button>
                 <Button 
                   variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(window.location.origin)
@@ -544,7 +546,7 @@ ${window.location.origin}`
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500">
           <p>
             Church Setup Roster - 
             {upcomingEvents.length} upcoming events, 
