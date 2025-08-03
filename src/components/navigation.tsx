@@ -1,18 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Calendar, Menu, Home, Users, CalendarDays, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { TeamSelector } from '@/components/team-selector'
+import { useTeam } from '@/contexts/team-context'
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { currentTeam } = useTeam()
 
   const closeMenu = () => setIsOpen(false)
+
+  // Close menu when pathname or team changes
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname, currentTeam?.id])
 
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
@@ -61,7 +68,7 @@ export function Navigation() {
           
           {/* Mobile Hamburger Menu */}
           <div className="md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <Sheet key={currentTeam?.id || 'no-team'} open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="p-2">
                   <Menu className="h-5 w-5" />
