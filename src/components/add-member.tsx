@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { membersApi } from '@/lib/supabase'
+import { useCurrentTeamId } from '@/contexts/team-context'
 import { Plus } from 'lucide-react'
 
 interface AddMemberProps {
@@ -21,6 +22,7 @@ interface AddMemberProps {
 }
 
 export function AddMember({ onMemberAdded }: AddMemberProps) {
+  const teamId = useCurrentTeamId()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -30,13 +32,14 @@ export function AddMember({ onMemberAdded }: AddMemberProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim()) return
+    if (!formData.name.trim() || !teamId) return
 
     setLoading(true)
     try {
       await membersApi.create({
         name: formData.name.trim(),
-        phone: formData.phone.trim()
+        phone: formData.phone.trim(),
+        team_id: teamId
       })
       
       setFormData({ name: '', phone: '' })
@@ -53,7 +56,7 @@ export function AddMember({ onMemberAdded }: AddMemberProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled={!teamId}>
           <Plus className="h-4 w-4 mr-2" />
           Add Member
         </Button>

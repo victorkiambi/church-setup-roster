@@ -1,13 +1,13 @@
 import { eventsApi } from './supabase'
 
 /**
- * Auto-archive past events
+ * Auto-archive past events for a specific team
  * This function should be called on app initialization to clean up old events
  */
-export async function autoArchivePastEvents(): Promise<number> {
+export async function autoArchivePastEvents(teamId: string): Promise<number> {
   try {
-    const archivedEvents = await eventsApi.autoArchivePastEvents()
-    console.log(`Auto-archived ${archivedEvents.length} past events`)
+    const archivedEvents = await eventsApi.autoArchivePastEvents(teamId)
+    console.log(`Auto-archived ${archivedEvents.length} past events for team ${teamId}`)
     return archivedEvents.length
   } catch (error) {
     console.error('Error auto-archiving past events:', error)

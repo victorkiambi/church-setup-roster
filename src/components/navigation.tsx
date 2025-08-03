@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Menu, Home, Users, CalendarDays } from 'lucide-react'
+import { Calendar, Menu, Home, Users, CalendarDays, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { TeamSelector } from '@/components/team-selector'
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
@@ -17,6 +18,7 @@ export function Navigation() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/members', label: 'Members', icon: Users },
     { href: '/events', label: 'Events', icon: CalendarDays },
+    { href: '/admin/teams', label: 'Teams', icon: Settings },
   ]
 
   return (
@@ -50,6 +52,11 @@ export function Navigation() {
                 )
               })}
             </div>
+          </div>
+          
+          {/* Team Selector - Desktop */}
+          <div className="hidden md:block">
+            <TeamSelector />
           </div>
           
           {/* Mobile Hamburger Menu */}
@@ -93,6 +100,14 @@ export function Navigation() {
                       </Link>
                     )
                   })}
+                  
+                  {/* Team Selector for Mobile */}
+                  <div className="mt-6 pt-4 border-t">
+                    <div className="px-4 py-2">
+                      <div className="text-sm font-medium text-gray-500 mb-3">Team</div>
+                      <TeamSelector />
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="absolute bottom-6 left-6 right-6">

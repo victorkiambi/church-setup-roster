@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,16 +14,19 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AddMember } from '@/components/add-member'
 import { membersApi, type Member } from '@/lib/supabase'
+import { useTeam } from '@/contexts/team-context'
 import { formatDate } from '@/lib/utils'
 import { Phone, ToggleLeft, ToggleRight } from 'lucide-react'
 
 export default function MembersPage() {
+  const { currentTeam } = useTeam()
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
+    if (!currentTeam?.id) return
     try {
-      const data = await membersApi.getAll()
+      const data = await membersApi.getAll(currentTeam.id)
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
@@ -31,7 +34,7 @@ export default function MembersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentTeam?.id])
 
   const toggleMemberStatus = async (member: Member) => {
     try {
@@ -45,7 +48,7 @@ export default function MembersPage() {
 
   useEffect(() => {
     loadMembers()
-  }, [])
+  }, [currentTeam?.id, loadMembers])
 
   if (loading) {
     return (
@@ -63,9 +66,9 @@ export default function MembersPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Church Members</CardTitle>
+            <CardTitle>{currentTeam?.name || 'Team'} Members</CardTitle>
             <CardDescription>
-              Manage church members who can be assigned to setup duties
+              Manage {currentTeam?.name?.toLowerCase() || 'team'} members who can be assigned to duties
             </CardDescription>
           </div>
           <AddMember onMemberAdded={loadMembers} />

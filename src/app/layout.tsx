@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { TeamProvider } from "@/contexts/team-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,12 +68,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navigation />
-        <main className="min-h-screen bg-background">
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </main>
+        <TeamProvider>
+          <Navigation />
+          <main className="min-h-screen bg-background">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </main>
+        </TeamProvider>
       </body>
     </html>
   );

@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { eventsApi, supabase, type Event, type Member } from '@/lib/supabase'
+import { useTeam } from '@/contexts/team-context'
 import { formatDate, getNextSundays } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
 import { exportCurrentMonthEvents } from '@/lib/pdf-export'
@@ -30,6 +31,7 @@ import { Calendar as CalendarIcon, Plus, RefreshCw, Zap, Archive, Trash2, Eye, D
 type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
 
 export default function EventsPage() {
+  const { currentTeam } = useTeam()
   const [events, setEvents] = useState<EventWithAssignments[]>([])
   const [archivedEvents, setArchivedEvents] = useState<EventWithAssignments[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,30 +45,10 @@ export default function EventsPage() {
     date: undefined as Date | undefined
   })
 
-  const loadEvents = useCallback(async () => {
+  const loadArchivedEvents = useCallback(async () => {
+    if (!currentTeam?.id) return []
     try {
-      // Auto-archive past events first
-      await autoArchivePastEvents()
-      
-      // Load active and archived events
-      const [activeData, archivedData] = await Promise.all([
-        eventsApi.getWithAssignments(),
-        loadArchivedEvents()
-      ])
-      
-      setEvents(activeData)
-      setArchivedEvents(archivedData)
-    } catch (error) {
-      console.error('Error loading events:', error)
-      alert('Failed to load events. Please check your connection.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const loadArchivedEvents = async () => {
-    try {
-      const archived = await eventsApi.getArchived()
+      const archived = await eventsApi.getArchived(currentTeam.id)
       // Get assignments for archived events
       const archivedWithAssignments = await Promise.all(
         archived.map(async (event) => {
@@ -74,12 +56,14 @@ export default function EventsPage() {
             .from('events')
             .select(`
               *,
+              team:teams(*),
               assignments (
                 id,
                 member:members (
                   id,
                   name,
-                  phone
+                  phone,
+                  team_id
                 )
               )
             `)
@@ -93,13 +77,36 @@ export default function EventsPage() {
       console.error('Error loading archived events:', error)
       return []
     }
-  }
+  }, [currentTeam?.id])
+
+  const loadEvents = useCallback(async () => {
+    if (!currentTeam?.id) return
+    try {
+      // Auto-archive past events first
+      await autoArchivePastEvents(currentTeam.id)
+      
+      // Load active and archived events
+      const [activeData, archivedData] = await Promise.all([
+        eventsApi.getWithAssignments(currentTeam.id),
+        loadArchivedEvents()
+      ])
+      
+      setEvents(activeData)
+      setArchivedEvents(archivedData)
+    } catch (error) {
+      console.error('Error loading events:', error)
+      alert('Failed to load events. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentTeam?.id, loadArchivedEvents])
 
   const generateSundays = async () => {
+    if (!currentTeam?.id) return
     setLoading(true)
     try {
       const nextSunday = getNextSundays(1)[0]
-      await eventsApi.generateSundays(nextSunday, 8)
+      await eventsApi.generateSundays(nextSunday, currentTeam.id, 8)
       await loadEvents()
       setShowGenerateSundays(false)
       alert('Successfully generated 8 weeks of Sunday services!')
@@ -112,13 +119,14 @@ export default function EventsPage() {
   }
 
   const addSpecialEvent = async () => {
-    if (!specialEventForm.title.trim() || !specialEventForm.date) return
+    if (!specialEventForm.title.trim() || !specialEventForm.date || !currentTeam?.id) return
 
     try {
       await eventsApi.create({
         title: specialEventForm.title.trim(),
         event_date: format(specialEventForm.date, 'yyyy-MM-dd'),
-        event_type: 'special'
+        event_type: 'special',
+        team_id: currentTeam.id
       })
       
       setSpecialEventForm({ title: '', date: undefined })
@@ -195,8 +203,8 @@ export default function EventsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="text-center sm:text-left">
-          <h1 className="text-2xl font-bold">Events & Assignments</h1>
-          <p className="text-muted-foreground">Manage Sunday services and special events</p>
+          <h1 className="text-2xl font-bold">{currentTeam?.name || 'Team'} Events & Assignments</h1>
+          <p className="text-muted-foreground">Manage {currentTeam?.name?.toLowerCase() || 'team'} Sunday services and special events</p>
         </div>
         
         {/* Action Buttons - Mobile Optimized */}

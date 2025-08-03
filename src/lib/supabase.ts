@@ -5,24 +5,91 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Database operations for Members
-export const membersApi = {
-  // Get all members
+// Database operations for Teams
+export const teamsApi = {
+  // Get all active teams
   async getAll() {
     const { data, error } = await supabase
-      .from('members')
+      .from('teams')
       .select('*')
+      .eq('is_active', true)
+      .order('name')
+    
+    if (error) throw error
+    return data as Team[]
+  },
+
+  // Get team by ID
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data as Team
+  },
+
+  // Create team
+  async create(team: { name: string; description?: string; admin_name?: string; admin_phone?: string; color?: string }) {
+    const { data, error } = await supabase
+      .from('teams')
+      .insert([team])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data as Team
+  },
+
+  // Update team
+  async update(id: string, updates: Partial<Team>) {
+    const { data, error } = await supabase
+      .from('teams')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data as Team
+  },
+
+  // Toggle active status
+  async toggleActive(id: string, is_active: boolean) {
+    const { data, error } = await supabase
+      .from('teams')
+      .update({ is_active })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data as Team
+  }
+}
+
+// Database operations for Members
+export const membersApi = {
+  // Get all members for a team
+  async getAll(teamId: string) {
+    const { data, error } = await supabase
+      .from('members')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .order('name')
     
     if (error) throw error
     return data as Member[]
   },
 
-  // Get active members only
-  async getActive() {
+  // Get active members for a team
+  async getActive(teamId: string) {
     const { data, error } = await supabase
       .from('members')
-      .select('*')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .eq('is_active', true)
       .order('name')
     
@@ -31,11 +98,11 @@ export const membersApi = {
   },
 
   // Add new member
-  async create(member: { name: string; phone: string }) {
+  async create(member: { name: string; phone: string; team_id: string }) {
     const { data, error } = await supabase
       .from('members')
       .insert([member])
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -48,7 +115,7 @@ export const membersApi = {
       .from('members')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -61,7 +128,7 @@ export const membersApi = {
       .from('members')
       .update({ is_active })
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -74,7 +141,7 @@ export const membersApi = {
       .from('members')
       .update({ is_active: false })
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -84,11 +151,12 @@ export const membersApi = {
 
 // Database operations for Events
 export const eventsApi = {
-  // Get all events (non-archived)
-  async getAll() {
+  // Get all events for a team (non-archived)
+  async getAll(teamId: string) {
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .eq('is_archived', false)
       .order('event_date')
     
@@ -96,22 +164,24 @@ export const eventsApi = {
     return data as Event[]
   },
 
-  // Get all events including archived
-  async getAllIncludingArchived() {
+  // Get all events for a team including archived
+  async getAllIncludingArchived(teamId: string) {
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .order('event_date')
     
     if (error) throw error
     return data as Event[]
   },
 
-  // Get archived events
-  async getArchived() {
+  // Get archived events for a team
+  async getArchived(teamId: string) {
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .eq('is_archived', true)
       .order('event_date', { ascending: false })
     
@@ -119,12 +189,13 @@ export const eventsApi = {
     return data as Event[]
   },
 
-  // Get upcoming events (non-archived)
-  async getUpcoming() {
+  // Get upcoming events for a team (non-archived)
+  async getUpcoming(teamId: string) {
     const today = new Date().toISOString().split('T')[0]
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select('*, team:teams(*)')
+      .eq('team_id', teamId)
       .eq('is_archived', false)
       .gte('event_date', today)
       .order('event_date')
@@ -133,21 +204,24 @@ export const eventsApi = {
     return data as Event[]
   },
 
-  // Get events with assignments (non-archived)
-  async getWithAssignments() {
+  // Get events with assignments for a team (non-archived)
+  async getWithAssignments(teamId: string) {
     const { data, error } = await supabase
       .from('events')
       .select(`
         *,
+        team:teams(*),
         assignments (
           id,
           member:members (
             id,
             name,
-            phone
+            phone,
+            team_id
           )
         )
       `)
+      .eq('team_id', teamId)
       .eq('is_archived', false)
       .order('event_date')
     
@@ -156,19 +230,19 @@ export const eventsApi = {
   },
 
   // Create event
-  async create(event: { title: string; event_date: string; event_type: 'sunday' | 'special' }) {
+  async create(event: { title: string; event_date: string; event_type: 'sunday' | 'special'; team_id: string }) {
     const { data, error } = await supabase
       .from('events')
       .insert([event])
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
     return data as Event
   },
 
-  // Generate Sunday services
-  async generateSundays(startDate: Date, count: number = 8) {
+  // Generate Sunday services for a team
+  async generateSundays(startDate: Date, teamId: string, count: number = 8) {
     const sundays = []
     const current = new Date(startDate)
     
@@ -176,7 +250,8 @@ export const eventsApi = {
       sundays.push({
         title: 'Sunday Service',
         event_date: current.toISOString().split('T')[0],
-        event_type: 'sunday' as const
+        event_type: 'sunday' as const,
+        team_id: teamId
       })
       current.setDate(current.getDate() + 7)
     }
@@ -184,26 +259,27 @@ export const eventsApi = {
     const { data, error } = await supabase
       .from('events')
       .insert(sundays)
-      .select()
+      .select('*, team:teams(*)')
     
     if (error) throw error
     return data as Event[]
   },
 
-  // Generate missing Sundays for current month (safe - won't affect existing events)
-  async generateMissingSundaysForMonth(year?: number, month?: number) {
+  // Generate missing Sundays for current month for a team (safe - won't affect existing events)
+  async generateMissingSundaysForMonth(teamId: string, year?: number, month?: number) {
     const { getAllSundaysInMonth, formatDateString } = await import('./utils')
     
     // Get all Sundays for the specified month (defaults to current month)
     const allSundays = getAllSundaysInMonth(year, month)
     
-    // Get existing Sunday events for this month
+    // Get existing Sunday events for this month and team
     const startOfMonth = new Date(year || new Date().getFullYear(), month !== undefined ? month : new Date().getMonth(), 1)
     const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0)
     
     const { data: existingEvents } = await supabase
       .from('events')
       .select('event_date')
+      .eq('team_id', teamId)
       .eq('event_type', 'sunday')
       .gte('event_date', formatDateString(startOfMonth))
       .lte('event_date', formatDateString(endOfMonth))
@@ -219,7 +295,8 @@ export const eventsApi = {
       .map(sunday => ({
         title: 'Sunday Service',
         event_date: formatDateString(sunday),
-        event_type: 'sunday' as const
+        event_type: 'sunday' as const,
+        team_id: teamId
       }))
     
     if (missingSundays.length === 0) {
@@ -230,7 +307,7 @@ export const eventsApi = {
     const { data, error } = await supabase
       .from('events')
       .insert(missingSundays)
-      .select()
+      .select('*, team:teams(*)')
     
     if (error) throw error
     return data as Event[]
@@ -242,7 +319,7 @@ export const eventsApi = {
       .from('events')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -255,7 +332,7 @@ export const eventsApi = {
       .from('events')
       .update({ is_archived: true })
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
@@ -268,22 +345,23 @@ export const eventsApi = {
       .from('events')
       .update({ is_archived: false })
       .eq('id', id)
-      .select()
+      .select('*, team:teams(*)')
       .single()
     
     if (error) throw error
     return data as Event
   },
 
-  // Auto-archive past events
-  async autoArchivePastEvents() {
+  // Auto-archive past events for a team
+  async autoArchivePastEvents(teamId: string) {
     const today = new Date().toISOString().split('T')[0]
     const { data, error } = await supabase
       .from('events')
       .update({ is_archived: true })
+      .eq('team_id', teamId)
       .lt('event_date', today)
       .eq('is_archived', false)
-      .select()
+      .select('*, team:teams(*)')
     
     if (error) throw error
     return data as Event[]
@@ -365,12 +443,25 @@ export const assignmentsApi = {
 }
 
 // Types for our database
+export interface Team {
+  id: string
+  name: string
+  description?: string
+  admin_name?: string
+  admin_phone?: string
+  color: string
+  is_active: boolean
+  created_at: string
+}
+
 export interface Member {
   id: string
   name: string
   phone: string
+  team_id: string
   is_active: boolean
   created_at: string
+  team?: Team
 }
 
 export interface Event {
@@ -378,8 +469,10 @@ export interface Event {
   title: string
   event_date: string
   event_type: 'sunday' | 'special'
+  team_id: string
   is_archived: boolean
   created_at: string
+  team?: Team
 }
 
 export interface Assignment {

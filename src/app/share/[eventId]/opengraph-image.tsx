@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { eventsApi } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 
 export const runtime = 'edge'
@@ -12,8 +12,26 @@ export const contentType = 'image/png'
 
 export default async function Image({ params }: { params: { eventId: string } }) {
   try {
-    const events = await eventsApi.getWithAssignments()
-    const event = events.find(e => e.id === params.eventId)
+    // Get the event first to find its team_id
+    const { data: eventData } = await supabase
+      .from('events')
+      .select(`
+        *,
+        team:teams(*),
+        assignments (
+          id,
+          member:members (
+            id,
+            name,
+            phone,
+            team_id
+          )
+        )
+      `)
+      .eq('id', params.eventId)
+      .single()
+    
+    const event = eventData
     
     if (!event) {
       return new ImageResponse(
@@ -38,7 +56,7 @@ export default async function Image({ params }: { params: { eventId: string } })
       )
     }
 
-    const assignedMembers = event.assignments?.map(a => a.member.name) || []
+    const assignedMembers = event.assignments?.map((a: { member: { name: string } }) => a.member.name) || []
     const memberText = assignedMembers.length > 0 
       ? assignedMembers.join(', ')
       : 'No assignments yet'
@@ -96,7 +114,7 @@ export default async function Image({ params }: { params: { eventId: string } })
               opacity: 0.8,
             }}
           >
-            Church Setup Roster
+            {event.team?.name || 'Church'} Roster
           </div>
         </div>
       ),
@@ -118,7 +136,7 @@ export default async function Image({ params }: { params: { eventId: string } })
             color: 'white',
           }}
         >
-          Church Setup Roster
+          Church Roster
         </div>
       ),
       { ...size }

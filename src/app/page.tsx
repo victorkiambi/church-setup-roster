@@ -10,42 +10,47 @@ import { DutyCardSkeleton, StatsCardSkeleton, MemberCardSkeleton } from '@/compo
 import { eventsApi, membersApi, type Event, type Member } from '@/lib/supabase'
 import { isUpcoming } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
+import { useTeam } from '@/contexts/team-context'
 import { Calendar, Users, Zap, ArrowRight, RefreshCw, Share2 } from 'lucide-react'
 import Link from 'next/link'
 
 type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
 
 export default function Home() {
+  const { currentTeam } = useTeam()
   const [events, setEvents] = useState<EventWithAssignments[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadEvents = useCallback(async () => {
+    if (!currentTeam?.id) return
     try {
-      const data = await eventsApi.getWithAssignments()
+      const data = await eventsApi.getWithAssignments(currentTeam.id)
       setEvents(data)
     } catch (error) {
       console.error('Error loading events:', error)
     }
-  }, [])
+  }, [currentTeam?.id])
 
   const loadMembers = useCallback(async () => {
+    if (!currentTeam?.id) return
     try {
-      const data = await membersApi.getAll()
+      const data = await membersApi.getAll(currentTeam.id)
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
     }
-  }, [])
+  }, [currentTeam?.id])
 
   const loadData = useCallback(async () => {
+    if (!currentTeam?.id) return
     setLoading(true)
     try {
       // Auto-archive past events before loading
-      await autoArchivePastEvents()
+      await autoArchivePastEvents(currentTeam.id)
       
       // Generate missing Sundays for current month
-      await eventsApi.generateMissingSundaysForMonth()
+      await eventsApi.generateMissingSundaysForMonth(currentTeam.id)
       
       // Load events and members
       await Promise.all([loadEvents(), loadMembers()])
@@ -54,7 +59,7 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }, [loadEvents, loadMembers])
+  }, [currentTeam?.id, loadEvents, loadMembers])
 
   useEffect(() => {
     loadData()
@@ -67,7 +72,12 @@ export default function Home() {
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
+              <div 
+                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg"
+                style={{ 
+                  background: currentTeam?.color ? `linear-gradient(135deg, ${currentTeam.color}, ${currentTeam.color}dd)` : 'linear-gradient(135deg, #3B82F6, #3B82F6dd)'
+                }}
+              >
                 <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -75,7 +85,7 @@ export default function Home() {
               </h1>
             </div>
             <p className="text-gray-600 text-lg sm:text-xl font-medium">
-              Church Setup Roster
+              {currentTeam?.name || 'Church Setup Roster'}
             </p>
           </div>
 
@@ -153,7 +163,12 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
-            <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
+            <div 
+              className="p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg"
+              style={{ 
+                background: currentTeam?.color ? `linear-gradient(135deg, ${currentTeam.color}, ${currentTeam.color}dd)` : 'linear-gradient(135deg, #3B82F6, #3B82F6dd)'
+              }}
+            >
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -161,7 +176,7 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-gray-600 text-lg sm:text-xl font-medium">
-            Church Setup Roster
+            {currentTeam?.name || 'Church Setup Roster'}
           </p>
         </div>
 

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { membersApi, assignmentsApi, type Member, type Event } from '@/lib/supabase'
+import { useCurrentTeamId } from '@/contexts/team-context'
 import { formatDate } from '@/lib/utils'
 import { Users, X } from 'lucide-react'
 
@@ -29,6 +30,7 @@ interface AssignMembersProps {
 }
 
 export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProps) {
+  const teamId = useCurrentTeamId()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
@@ -36,13 +38,14 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
   const [assignments, setAssignments] = useState<Array<{ id: string; member: Member }>>([])
 
   const loadMembers = useCallback(async () => {
+    if (!teamId) return
     try {
-      const data = await membersApi.getActive()
+      const data = await membersApi.getActive(teamId)
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
     }
-  }, [])
+  }, [teamId])
 
   const loadAssignments = useCallback(async () => {
     try {

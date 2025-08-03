@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DutyCard } from '@/components/duty-card'
-import { eventsApi, type Event, type Member } from '@/lib/supabase'
+import { supabase, type Event, type Member } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 import { Calendar, ArrowLeft, Share2, Users } from 'lucide-react'
 import Link from 'next/link'
@@ -21,8 +21,23 @@ export default function ShareEventPage() {
 
   const loadEvent = useCallback(async () => {
     try {
-      const events = await eventsApi.getWithAssignments()
-      const foundEvent = events.find(e => e.id === params.eventId)
+      const { data: foundEvent } = await supabase
+        .from('events')
+        .select(`
+          *,
+          team:teams(*),
+          assignments (
+            id,
+            member:members (
+              id,
+              name,
+              phone,
+              team_id
+            )
+          )
+        `)
+        .eq('id', params.eventId)
+        .single()
       
       if (foundEvent) {
         setEvent(foundEvent)
