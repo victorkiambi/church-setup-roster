@@ -105,7 +105,7 @@ export function Navigation() {
                   <div className="mt-6 pt-4 border-t">
                     <div className="px-4 py-2">
                       <div className="text-sm font-medium text-gray-500 mb-3">Team</div>
-                      <TeamSelector />
+                      <TeamSelector onTeamChange={closeMenu} />
                     </div>
                   </div>
                 </div>

@@ -60,15 +60,17 @@ export default function ShareEventPage() {
       ? assignedMembers.map(m => m.name).join(', ')
       : 'No assignments yet'
     
+    const teamName = event.team?.name || 'Church'
     const message = `🏛️ ${event.title}
 📅 ${formatDate(event.event_date)}
 👥 ${members}
+🎯 ${teamName} Team
 
 View full roster: ${window.location.origin}`
     
     if (navigator.share) {
       navigator.share({
-        title: event.title,
+        title: `${event.title} - ${teamName}`,
         text: message,
         url: window.location.href
       })

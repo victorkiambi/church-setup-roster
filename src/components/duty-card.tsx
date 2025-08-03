@@ -7,6 +7,7 @@ import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { formatDate, isUpcoming } from '@/lib/utils'
 import { eventsApi, type Event, type Member } from '@/lib/supabase'
+import { useTeam } from '@/contexts/team-context'
 import { Calendar, Users, Clock, Share2, Trash2, Archive, FileDown } from 'lucide-react'
 
 interface DutyCardProps {
@@ -17,6 +18,7 @@ interface DutyCardProps {
 }
 
 export function DutyCard({ event, isNext = false, onAssignmentsChanged, showActions = true }: DutyCardProps) {
+  const { currentTeam } = useTeam()
   const assignedMembers = event.assignments?.map(a => a.member) || []
   const isUpcomingEvent = isUpcoming(event.event_date)
   
@@ -40,15 +42,17 @@ export function DutyCard({ event, isNext = false, onAssignmentsChanged, showActi
       : 'No assignments yet'
     
     const shareUrl = `${window.location.origin}/share/${event.id}`
+    const teamName = currentTeam?.name || 'Church'
     const message = `🏛️ ${event.title}
 📅 ${formatDate(event.event_date)}
 👥 ${members}
+🎯 ${teamName} Team
 
 View full details: ${shareUrl}`
     
     if (navigator.share) {
       navigator.share({
-        title: `${event.title} - Church Setup`,
+        title: `${event.title} - ${teamName}`,
         text: message,
         url: shareUrl
       })

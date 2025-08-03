@@ -518,15 +518,17 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
                 <Button 
                   onClick={() => {
-                    const message = `🏛️ Church Setup Roster
+                    const teamName = currentTeam?.name || 'Church'
+                    const message = `🏛️ ${teamName} Roster
                     
 See who's on duty this Sunday and upcoming events!
+🎯 ${teamName} Team
 
 ${window.location.origin}`
                     
                     if (navigator.share) {
                       navigator.share({
-                        title: 'Church Setup Roster',
+                        title: `${teamName} Roster`,
                         text: message,
                         url: window.location.origin
                       })

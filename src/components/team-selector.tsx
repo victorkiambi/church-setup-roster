@@ -17,9 +17,10 @@ import { ChevronDown, Users, Loader2 } from 'lucide-react'
 interface TeamSelectorProps {
   showLabel?: boolean
   size?: 'sm' | 'default' | 'lg'
+  onTeamChange?: () => void
 }
 
-export function TeamSelector({ showLabel = true, size = 'default' }: TeamSelectorProps) {
+export function TeamSelector({ showLabel = true, size = 'default', onTeamChange }: TeamSelectorProps) {
   const { currentTeam, teams, isLoading, switchTeam } = useTeam()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -44,6 +45,7 @@ export function TeamSelector({ showLabel = true, size = 'default' }: TeamSelecto
   const handleTeamSwitch = (teamId: string) => {
     switchTeam(teamId)
     setIsOpen(false)
+    onTeamChange?.()
   }
 
   return (
