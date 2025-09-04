@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { membersApi } from '@/lib/supabase'
+import { membersApi } from '@/lib/neon'
 import { useCurrentTeamId } from '@/contexts/team-context'
 import { Plus } from 'lucide-react'
 
@@ -39,7 +39,7 @@ export function AddMember({ onMemberAdded }: AddMemberProps) {
       await membersApi.create({
         name: formData.name.trim(),
         phone: formData.phone.trim(),
-        team_id: teamId
+        teamId: teamId
       })
       
       setFormData({ name: '', phone: '' })

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AddTeam } from '@/components/add-team'
-import { teamsApi, membersApi, eventsApi, type Team } from '@/lib/supabase'
+import { type Team } from '@/lib/neon'
 import { formatDate } from '@/lib/utils'
 import { Users, Calendar, Phone, ToggleLeft, ToggleRight } from 'lucide-react'
 
@@ -28,16 +28,24 @@ export default function TeamsManagementPage() {
 
   const loadTeams = async () => {
     try {
-      const teamsData = await teamsApi.getAll()
+      const teamsResponse = await fetch('/api/teams')
+      if (!teamsResponse.ok) {
+        throw new Error('Failed to fetch teams')
+      }
+      const teamsData = await teamsResponse.json()
       
       // Get stats for each team
       const teamsWithStats = await Promise.all(
-        teamsData.map(async (team) => {
+        teamsData.map(async (team: Team) => {
           try {
-            const [members, events] = await Promise.all([
-              membersApi.getActive(team.id),
-              eventsApi.getUpcoming(team.id)
+            const [membersResponse, eventsResponse] = await Promise.all([
+              fetch(`/api/members?teamId=${team.id}&activeOnly=true`),
+              fetch(`/api/events?teamId=${team.id}&type=upcoming`)
             ])
+            
+            const members = membersResponse.ok ? await membersResponse.json() : []
+            const events = eventsResponse.ok ? await eventsResponse.json() : []
+            
             return {
               ...team,
               memberCount: members.length,
@@ -65,7 +73,18 @@ export default function TeamsManagementPage() {
 
   const toggleTeamStatus = async (team: Team) => {
     try {
-      await teamsApi.toggleActive(team.id, !team.is_active)
+      const response = await fetch(`/api/teams/${team.id}/toggle-active`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: !team.isActive })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to toggle team status')
+      }
+      
       await loadTeams() // Refresh the list
     } catch (error) {
       console.error('Error toggling team status:', error)
@@ -127,7 +146,7 @@ export default function TeamsManagementPage() {
                         <div className="flex items-center gap-3">
                           <div 
                             className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: team.color }}
+                            style={{ backgroundColor: team.color || '#3B82F6' }}
                           />
                           <div>
                             <div className="font-medium">{team.name}</div>
@@ -140,13 +159,13 @@ export default function TeamsManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {team.admin_name ? (
+                        {team.adminName ? (
                           <div>
-                            <div className="font-medium">{team.admin_name}</div>
-                            {team.admin_phone && (
+                            <div className="font-medium">{team.adminName}</div>
+                            {team.adminPhone && (
                               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <Phone className="h-3 w-3" />
-                                <span className="font-mono">{team.admin_phone}</span>
+                                <span className="font-mono">{team.adminPhone}</span>
                               </div>
                             )}
                           </div>
@@ -167,12 +186,12 @@ export default function TeamsManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={team.is_active ? 'default' : 'secondary'}>
-                          {team.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={team.isActive ? 'default' : 'secondary'}>
+                          {team.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(team.created_at)}
+                        {team.createdAt ? formatDate(team.createdAt) : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -181,7 +200,7 @@ export default function TeamsManagementPage() {
                           onClick={() => toggleTeamStatus(team)}
                           className="w-full"
                         >
-                          {team.is_active ? (
+                          {team.isActive ? (
                             <ToggleRight className="h-4 w-4 text-green-600" />
                           ) : (
                             <ToggleLeft className="h-4 w-4 text-gray-400" />
@@ -197,7 +216,7 @@ export default function TeamsManagementPage() {
           
           <div className="mt-6 text-sm text-muted-foreground">
             Total: {teams.length} teams 
-            ({teams.filter(t => t.is_active).length} active, {teams.filter(t => !t.is_active).length} inactive)
+            ({teams.filter(t => t.isActive).length} active, {teams.filter(t => !t.isActive).length} inactive)
           </div>
         </CardContent>
       </Card>
@@ -243,7 +262,7 @@ export default function TeamsManagementPage() {
                 <div className="h-4 w-4 bg-purple-600 rounded-full" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{teams.filter(t => t.is_active).length}</div>
+                <div className="text-2xl font-bold">{teams.filter(t => t.isActive).length}</div>
                 <p className="text-sm text-muted-foreground">Active Teams</p>
               </div>
             </div>

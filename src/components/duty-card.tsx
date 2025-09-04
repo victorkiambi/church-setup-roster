@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
 import { formatDate, isUpcoming } from '@/lib/utils'
-import { eventsApi, type Event, type Member } from '@/lib/supabase'
+import { eventsApi, type Event, type Member } from '@/lib/neon'
 import { useTeam } from '@/contexts/team-context'
 import { Calendar, Users, Clock, Share2, Trash2, Archive, FileDown } from 'lucide-react'
 
@@ -19,8 +19,8 @@ interface DutyCardProps {
 
 export function DutyCard({ event, isNext = false, onAssignmentsChanged, showActions = true }: DutyCardProps) {
   const { currentTeam } = useTeam()
-  const assignedMembers = event.assignments?.map(a => a.member) || []
-  const isUpcomingEvent = isUpcoming(event.event_date)
+  const assignedMembers = event.assignments?.filter(a => a.member).map(a => a.member!) || []
+  const isUpcomingEvent = isUpcoming(event.eventDate)
   
   const handleDelete = async () => {
     await eventsApi.delete(event.id)
@@ -44,7 +44,7 @@ export function DutyCard({ event, isNext = false, onAssignmentsChanged, showActi
     const shareUrl = `${window.location.origin}/share/${event.id}`
     const teamName = currentTeam?.name || 'Church'
     const message = `🏛️ ${event.title}
-📅 ${formatDate(event.event_date)}
+📅 ${formatDate(event.eventDate)}
 👥 ${members}
 🎯 ${teamName} Team
 
@@ -69,7 +69,7 @@ View full details: ${shareUrl}`
     // Create a temporary link and trigger download
     const link = document.createElement('a')
     link.href = exportUrl
-    link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.event_date}.pdf`
+    link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.eventDate}.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -92,7 +92,7 @@ View full details: ${shareUrl}`
                 {event.title}
               </CardTitle>
               <p className={`font-medium ${isNext ? 'text-blue-700' : 'text-gray-600'} ${isNext ? 'text-base' : 'text-sm'}`}>
-                {formatDate(event.event_date)}
+                {formatDate(event.eventDate)}
               </p>
             </div>
           </div>
@@ -104,12 +104,12 @@ View full details: ${shareUrl}`
             )}
             <Badge 
               className={`px-3 py-1 font-medium ${
-                event.event_type === 'sunday' 
+                event.eventType === 'sunday' 
                   ? 'bg-green-100 text-green-700 border-green-200' 
                   : 'bg-orange-100 text-orange-700 border-orange-200'
               }`}
             >
-              {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
+              {event.eventType === 'sunday' ? 'Sunday' : 'Special'}
             </Badge>
           </div>
         </div>
@@ -164,7 +164,7 @@ View full details: ${shareUrl}`
               </div>
               <span className="text-sm font-medium text-blue-700">
                 {(() => {
-                  const eventDate = new Date(event.event_date)
+                  const eventDate = new Date(event.eventDate)
                   const today = new Date()
                   const diffTime = eventDate.getTime() - today.getTime()
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))

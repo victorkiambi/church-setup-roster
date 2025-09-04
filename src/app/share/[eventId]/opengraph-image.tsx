@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 
 export const runtime = 'edge'
@@ -13,25 +12,44 @@ export const contentType = 'image/png'
 export default async function Image({ params }: { params: { eventId: string } }) {
   try {
     // Get the event first to find its team_id
-    const { data: eventData } = await supabase
-      .from('events')
-      .select(`
-        *,
-        team:teams(*),
-        assignments (
-          id,
-          member:members (
-            id,
-            name,
-            phone,
-            team_id
-          )
-        )
-      `)
-      .eq('id', params.eventId)
-      .single()
+    const { getDb } = await import('@/lib/db')
+    const database = getDb()
     
-    const event = eventData
+    const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId
+    if (!eventId) {
+      return new ImageResponse(
+        (
+          <div
+            style={{
+              fontSize: 48,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              textAlign: 'center',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+            }}
+          >
+            Invalid Event ID
+          </div>
+        ),
+        { ...size }
+      )
+    }
+    
+    const event = await database.query.events.findFirst({
+      where: (events, { eq }) => eq(events.id, eventId),
+      with: {
+        team: true,
+        assignments: {
+          with: {
+            member: true
+          }
+        }
+      }
+    })
     
     if (!event) {
       return new ImageResponse(
@@ -56,7 +74,7 @@ export default async function Image({ params }: { params: { eventId: string } })
       )
     }
 
-    const assignedMembers = event.assignments?.map((a: { member: { name: string } }) => a.member.name) || []
+    const assignedMembers = event.assignments?.filter(a => a.member).map(a => a.member!.name) || []
     const memberText = assignedMembers.length > 0 
       ? assignedMembers.join(', ')
       : 'No assignments yet'
@@ -93,7 +111,7 @@ export default async function Image({ params }: { params: { eventId: string } })
               opacity: 0.9,
             }}
           >
-            📅 {formatDate(event.event_date)}
+            📅 {formatDate(event.eventDate)}
           </div>
           <div
             style={{

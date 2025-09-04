@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AddMember } from '@/components/add-member'
-import { membersApi, type Member } from '@/lib/supabase'
+import { membersApi, type Member } from '@/lib/neon'
 import { useTeam } from '@/contexts/team-context'
 import { formatDate } from '@/lib/utils'
 import { Phone, ToggleLeft, ToggleRight } from 'lucide-react'
@@ -30,7 +30,7 @@ export default function MembersPage() {
       setMembers(data)
     } catch (error) {
       console.error('Error loading members:', error)
-      alert('Failed to load members. Please check your Supabase configuration.')
+      alert('Failed to load members. Please check your database configuration.')
     } finally {
       setLoading(false)
     }
@@ -38,7 +38,7 @@ export default function MembersPage() {
 
   const toggleMemberStatus = async (member: Member) => {
     try {
-      await membersApi.toggleActive(member.id, !member.is_active)
+      await membersApi.toggleActive(member.id, !member.isActive)
       await loadMembers() // Refresh the list
     } catch (error) {
       console.error('Error toggling member status:', error)
@@ -106,12 +106,12 @@ export default function MembersPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={member.is_active ? 'default' : 'secondary'}>
-                          {member.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={member.isActive ? 'default' : 'secondary'}>
+                          {member.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(member.created_at)}
+                        {member.createdAt ? formatDate(member.createdAt) : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -120,7 +120,7 @@ export default function MembersPage() {
                           onClick={() => toggleMemberStatus(member)}
                           className="w-full"
                         >
-                          {member.is_active ? (
+                          {member.isActive ? (
                             <ToggleRight className="h-4 w-4 text-green-600" />
                           ) : (
                             <ToggleLeft className="h-4 w-4 text-gray-400" />
@@ -136,7 +136,7 @@ export default function MembersPage() {
           
           <div className="mt-6 text-sm text-muted-foreground">
             Total: {members.length} members 
-            ({members.filter(m => m.is_active).length} active, {members.filter(m => !m.is_active).length} inactive)
+            ({members.filter(m => m.isActive).length} active, {members.filter(m => !m.isActive).length} inactive)
           </div>
         </CardContent>
       </Card>

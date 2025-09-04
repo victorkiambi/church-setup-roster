@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { DutyCard } from '@/components/duty-card'
 import { AddMember } from '@/components/add-member'
 import { DutyCardSkeleton, StatsCardSkeleton, MemberCardSkeleton } from '@/components/loading-skeleton'
-import { eventsApi, membersApi, type Event, type Member } from '@/lib/supabase'
+import { eventsApi, membersApi, type Event, type Member } from '@/lib/neon'
 import { isUpcoming } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
 import { useTeam } from '@/contexts/team-context'
@@ -26,7 +26,15 @@ export default function Home() {
     if (!currentTeam?.id) return
     try {
       const data = await eventsApi.getWithAssignments(currentTeam.id)
-      setEvents(data)
+      // Transform the data to match EventWithAssignments type
+      const transformedData = data.map(event => ({
+        ...event,
+        assignments: event.assignments?.filter(a => a.member).map(a => ({
+          id: a.id,
+          member: a.member!
+        })) || []
+      }))
+      setEvents(transformedData)
     } catch (error) {
       console.error('Error loading events:', error)
     }
@@ -48,10 +56,10 @@ export default function Home() {
     try {
       // Auto-archive past events before loading
       await autoArchivePastEvents(currentTeam.id)
-      
+
       // Generate missing Sundays for current month
       await eventsApi.generateMissingSundaysForMonth(currentTeam.id)
-      
+
       // Load events and members
       await Promise.all([loadEvents(), loadMembers()])
     } catch (error) {
@@ -72,9 +80,9 @@ export default function Home() {
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
-              <div 
+              <div
                 className="p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg"
-                style={{ 
+                style={{
                   background: currentTeam?.color ? `linear-gradient(135deg, ${currentTeam.color}, ${currentTeam.color}dd)` : 'linear-gradient(135deg, #3B82F6, #3B82F6dd)'
                 }}
               >
@@ -128,34 +136,34 @@ export default function Home() {
 
   // Filter and sort events
   const upcomingEvents = events
-    .filter(e => isUpcoming(e.event_date))
-    .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+    .filter(e => isUpcoming(e.eventDate))
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
 
   // Get all Sunday events for current month
   const now = new Date()
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
-  
+
   const nextSundays = upcomingEvents
     .filter(e => {
-      if (e.event_type !== 'sunday') return false
-      const eventDate = new Date(e.event_date)
+      if (e.eventType !== 'sunday') return false
+      const eventDate = new Date(e.eventDate)
       return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
     })
 
   const specialEvents = upcomingEvents
-    .filter(e => e.event_type === 'special')
+    .filter(e => e.eventType === 'special')
     .slice(0, 3)
 
   const nextEvent = upcomingEvents[0]
 
   // Member stats
-  const activeMembers = members.filter(m => m.is_active)
+  const activeMembers = members.filter(m => m.isActive)
   const recentMembers = members.slice(-3)
 
   // Get today's events
   const today = new Date().toISOString().split('T')[0]
-  const todayEvents = events.filter(e => e.event_date === today)
+  const todayEvents = events.filter(e => e.eventDate === today)
 
   return (
     <div className="min-h-screen">
@@ -163,9 +171,9 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 sm:gap-3 mb-4">
-            <div 
+            <div
               className="p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg"
-              style={{ 
+              style={{
                 background: currentTeam?.color ? `linear-gradient(135deg, ${currentTeam.color}, ${currentTeam.color}dd)` : 'linear-gradient(135deg, #3B82F6, #3B82F6dd)'
               }}
             >
@@ -197,16 +205,16 @@ export default function Home() {
                   <div key={event.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100 shadow-sm gap-2 sm:gap-0">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</span>
-                      <Badge 
+                      <Badge
                         className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium"
-                        variant={event.event_type === 'sunday' ? 'default' : 'secondary'}
+                        variant={event.eventType === 'sunday' ? 'default' : 'secondary'}
                       >
-                        {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
+                        {event.eventType === 'sunday' ? 'Sunday' : 'Special'}
                       </Badge>
                     </div>
                     <div className="text-xs sm:text-sm font-medium text-gray-600">
-                      {event.assignments?.length > 0 
-                        ? event.assignments.map(a => a.member.name).join(', ')
+                      {event.assignments?.length > 0
+                        ? event.assignments.filter(a => a.member).map(a => a.member!.name).join(', ')
                         : 'No assignments'
                       }
                     </div>
@@ -311,9 +319,9 @@ export default function Home() {
             {nextSundays.length > 0 ? (
               <div className="space-y-3 sm:space-y-4">
                 {nextSundays.map((event, index) => (
-                  <DutyCard 
-                    key={event.id} 
-                    event={event} 
+                  <DutyCard
+                    key={event.id}
+                    event={event}
                     isNext={index === 0 && event.id === nextEvent?.id}
                     onAssignmentsChanged={loadData}
                   />
@@ -417,19 +425,18 @@ export default function Home() {
                         <div>
                           <span className="font-semibold text-gray-900 text-sm sm:text-base">{member.name}</span>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge 
-                              className={`px-2 py-0.5 text-xs ${
-                                member.is_active 
-                                  ? 'bg-green-100 text-green-700 border-green-200' 
-                                  : 'bg-gray-100 text-gray-600 border-gray-200'
-                              }`}
+                            <Badge
+                              className={`px-2 py-0.5 text-xs ${member.isActive
+                                ? 'bg-green-100 text-green-700 border-green-200'
+                                : 'bg-gray-100 text-gray-600 border-gray-200'
+                                }`}
                             >
-                              {member.is_active ? 'Active' : 'Inactive'}
+                              {member.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
                         </div>
                         {member.phone && (
-                          <a 
+                          <a
                             href={`tel:${member.phone}`}
                             className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors self-start sm:self-auto"
                           >
@@ -516,7 +523,7 @@ export default function Home() {
                 Share the church setup roster with your team
               </p>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                <Button 
+                <Button
                   onClick={() => {
                     const teamName = currentTeam?.name || 'Church'
                     const message = `🏛️ ${teamName} Roster
@@ -525,7 +532,7 @@ See who's on duty this Sunday and upcoming events!
 🎯 ${teamName} Team
 
 ${window.location.origin}`
-                    
+
                     if (navigator.share) {
                       navigator.share({
                         title: `${teamName} Roster`,
@@ -542,7 +549,7 @@ ${window.location.origin}`
                   <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Share Roster
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   className="text-xs sm:text-sm"
@@ -565,8 +572,8 @@ ${window.location.origin}`
         {/* Footer Info */}
         <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500">
           <p>
-            Church Setup Roster - 
-            {upcomingEvents.length} upcoming events, 
+            Church Setup Roster -
+            {upcomingEvents.length} upcoming events,
             {events.reduce((sum, e) => sum + (e.assignments?.length || 0), 0)} total assignments
           </p>
         </div>

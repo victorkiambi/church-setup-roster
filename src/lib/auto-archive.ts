@@ -1,4 +1,4 @@
-import { eventsApi } from './supabase'
+import { eventsApi } from './neon'
 
 /**
  * Auto-archive past events for a specific team

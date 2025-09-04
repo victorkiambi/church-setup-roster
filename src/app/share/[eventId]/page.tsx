@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DutyCard } from '@/components/duty-card'
-import { supabase, type Event, type Member } from '@/lib/supabase'
+import { type Event, type Member } from '@/lib/neon'
 import { formatDate } from '@/lib/utils'
 import { Calendar, ArrowLeft, Share2, Users } from 'lucide-react'
 import Link from 'next/link'
 
-type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
+type EventWithAssignments = Event & { 
+  assignments: Array<{ id: string; member: Member }>;
+}
 
 export default function ShareEventPage() {
   const params = useParams()
@@ -21,26 +23,39 @@ export default function ShareEventPage() {
 
   const loadEvent = useCallback(async () => {
     try {
-      const { data: foundEvent } = await supabase
-        .from('events')
-        .select(`
-          *,
-          team:teams(*),
-          assignments (
-            id,
-            member:members (
-              id,
-              name,
-              phone,
-              team_id
-            )
-          )
-        `)
-        .eq('id', params.eventId)
-        .single()
+      const { getDb } = await import('@/lib/db')
+      const database = getDb()
+      
+      const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId
+      if (!eventId) {
+        setError('Invalid event ID')
+        return
+      }
+      
+      const foundEvent = await database.query.events.findFirst({
+        where: (events, { eq }) => eq(events.id, eventId),
+        with: {
+          team: true,
+          assignments: {
+            with: {
+              member: true
+            }
+          }
+        }
+      })
       
       if (foundEvent) {
-        setEvent(foundEvent)
+        // Transform the data to match DutyCard expectations
+        const transformedEvent: EventWithAssignments = {
+          ...foundEvent,
+          assignments: foundEvent.assignments
+            .filter(a => a.member !== null)
+            .map(a => ({
+              id: a.id,
+              member: a.member!
+            }))
+        }
+        setEvent(transformedEvent)
       } else {
         setError('Event not found')
       }
@@ -55,14 +70,14 @@ export default function ShareEventPage() {
   const shareEvent = () => {
     if (!event) return
 
-    const assignedMembers = event.assignments?.map(a => a.member) || []
+    const assignedMembers = event.assignments?.filter(a => a.member).map(a => a.member!) || []
     const members = assignedMembers.length > 0 
       ? assignedMembers.map(m => m.name).join(', ')
       : 'No assignments yet'
     
     const teamName = event.team?.name || 'Church'
     const message = `🏛️ ${event.title}
-📅 ${formatDate(event.event_date)}
+📅 ${formatDate(event.eventDate)}
 👥 ${members}
 🎯 ${teamName} Team
 
@@ -185,13 +200,13 @@ View full roster: ${window.location.origin}`
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span>{event.title} - {formatDate(event.event_date)}</span>
+              <span>{event.title} - {formatDate(event.eventDate)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-500" />
               <span>
                 {event.assignments?.length > 0 
-                  ? `${event.assignments.length} member(s) assigned: ${event.assignments.map(a => a.member.name).join(', ')}`
+                  ? `${event.assignments.length} member(s) assigned: ${event.assignments.filter(a => a.member).map(a => a.member!.name).join(', ')}`
                   : 'No members assigned yet'
                 }
               </span>
@@ -199,12 +214,12 @@ View full roster: ${window.location.origin}`
             <div className="flex items-center gap-2">
               <Badge 
                 className={`${
-                  event.event_type === 'sunday' 
+                  event.eventType === 'sunday' 
                     ? 'bg-green-100 text-green-700 border-green-200' 
                     : 'bg-orange-100 text-orange-700 border-orange-200'
                 }`}
               >
-                {event.event_type === 'sunday' ? 'Sunday Service' : 'Special Event'}
+                {event.eventType === 'sunday' ? 'Sunday Service' : 'Special Event'}
               </Badge>
             </div>
           </div>

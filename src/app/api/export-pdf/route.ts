@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer'
 import React from 'react'
-import { supabase, type Event, type Member } from '@/lib/supabase'
+import { type Event, type Member } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
 
 const styles = StyleSheet.create({
@@ -112,31 +112,30 @@ interface EventWithAssignments extends Event {
 }
 
 async function getEventWithAssignments(eventId: string): Promise<EventWithAssignments | null> {
-  const { data, error } = await supabase
-    .from('events')
-    .select(`
-      *,
-      assignments (
-        id,
-        member:members (
-          id,
-          name,
-          phone
-        )
-      )
-    `)
-    .eq('id', eventId)
-    .single()
+  try {
+    const { getDb } = await import('@/lib/db')
+    const database = getDb()
+    
+    const event = await database.query.events.findFirst({
+      where: (events, { eq }) => eq(events.id, eventId),
+      with: {
+        assignments: {
+          with: {
+            member: true
+          }
+        }
+      }
+    })
 
-  if (error || !data) {
+    return event as EventWithAssignments | null
+  } catch (error) {
+    console.error('Error fetching event:', error)
     return null
   }
-
-  return data as EventWithAssignments
 }
 
 function createEventPDF(event: EventWithAssignments) {
-  const assignedMembers = event.assignments?.map(a => a.member) || []
+  const assignedMembers = event.assignments?.filter(a => a.member).map(a => a.member!) || []
   
   return React.createElement(Document, {},
     React.createElement(Page, { size: 'A4', style: styles.page },
@@ -146,9 +145,9 @@ function createEventPDF(event: EventWithAssignments) {
       ),
       React.createElement(View, { style: styles.eventSection },
         React.createElement(Text, { style: styles.eventTitle }, event.title),
-        React.createElement(Text, { style: styles.eventDate }, formatDate(event.event_date)),
+        React.createElement(Text, { style: styles.eventDate }, formatDate(event.eventDate)),
         React.createElement(View, { style: styles.eventType },
-          React.createElement(Text, {}, event.event_type === 'sunday' ? 'Sunday Service' : 'Special Event')
+          React.createElement(Text, {}, event.eventType === 'sunday' ? 'Sunday Service' : 'Special Event')
         ),
         React.createElement(Text, { style: styles.membersHeader }, 
           `Assigned Members (${assignedMembers.length})`
@@ -198,7 +197,7 @@ export async function GET(request: NextRequest) {
     const pdfDoc = pdf(createEventPDF(event))
     const pdfStream = await pdfDoc.toBlob()
 
-    const fileName = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.event_date}.pdf`
+    const fileName = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.eventDate}.pdf`
 
     return new Response(pdfStream, {
       headers: {

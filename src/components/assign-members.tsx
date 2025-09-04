@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { membersApi, assignmentsApi, type Member, type Event } from '@/lib/supabase'
+import { membersApi, assignmentsApi, type Member, type Event } from '@/lib/neon'
 import { useCurrentTeamId } from '@/contexts/team-context'
 import { formatDate } from '@/lib/utils'
 import { Users, X } from 'lucide-react'
@@ -50,7 +50,14 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
   const loadAssignments = useCallback(async () => {
     try {
       const data = await assignmentsApi.getByEvent(event.id)
-      setAssignments(data)
+      // Transform the data to match expected type
+      const transformedAssignments = data
+        .filter(a => a.member !== null)
+        .map(a => ({
+          id: a.id,
+          member: a.member!
+        }))
+      setAssignments(transformedAssignments)
     } catch (error) {
       console.error('Error loading assignments:', error)
     }
@@ -62,8 +69,8 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
     setLoading(true)
     try {
       await assignmentsApi.create({
-        event_id: event.id,
-        member_id: selectedMember
+        eventId: event.id,
+        memberId: selectedMember
       })
       
       setSelectedMember('')
@@ -95,7 +102,7 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
     }
   }, [open, loadMembers, loadAssignments])
 
-  const assignedMemberIds = assignments.map(a => a.member.id)
+  const assignedMemberIds = assignments.filter(a => a.member).map(a => a.member!.id)
   const availableMembers = members.filter(m => !assignedMemberIds.includes(m.id))
 
   return (
@@ -110,7 +117,7 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
         <DialogHeader>
           <DialogTitle>Assign Members</DialogTitle>
           <DialogDescription>
-            Assign church members to {event.title} on {formatDate(event.event_date)}
+            Assign church members to {event.title} on {formatDate(event.eventDate)}
           </DialogDescription>
         </DialogHeader>
 
@@ -172,11 +179,11 @@ export function AssignMembers({ event, onAssignmentsChanged }: AssignMembersProp
           {/* Event Info */}
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2">
-              <Badge variant={event.event_type === 'sunday' ? 'default' : 'secondary'}>
-                {event.event_type === 'sunday' ? 'Sunday Service' : 'Special Event'}
+              <Badge variant={event.eventType === 'sunday' ? 'default' : 'secondary'}>
+                {event.eventType === 'sunday' ? 'Sunday Service' : 'Special Event'}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {formatDate(event.event_date)}
+                {formatDate(event.eventDate)}
               </span>
             </div>
           </div>

@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { teamsApi } from '@/lib/supabase'
+
 import { Plus } from 'lucide-react'
 
 interface AddTeamProps {
@@ -39,8 +39,8 @@ export function AddTeam({ onTeamAdded, trigger }: AddTeamProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    admin_name: '',
-    admin_phone: '',
+    adminName: '',
+    adminPhone: '',
     color: TEAM_COLORS[0]
   })
 
@@ -50,19 +50,29 @@ export function AddTeam({ onTeamAdded, trigger }: AddTeamProps) {
 
     setLoading(true)
     try {
-      await teamsApi.create({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        admin_name: formData.admin_name.trim() || undefined,
-        admin_phone: formData.admin_phone.trim() || undefined,
-        color: formData.color
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+          adminName: formData.adminName.trim() || undefined,
+          adminPhone: formData.adminPhone.trim() || undefined,
+          color: formData.color
+        })
       })
-      
+
+      if (!response.ok) {
+        throw new Error('Failed to create team')
+      }
+
       setFormData({
         name: '',
         description: '',
-        admin_name: '',
-        admin_phone: '',
+        adminName: '',
+        adminPhone: '',
         color: TEAM_COLORS[0]
       })
       setOpen(false)
@@ -109,7 +119,7 @@ export function AddTeam({ onTeamAdded, trigger }: AddTeamProps) {
                 required
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="description" className="text-right mt-2">
                 Description
@@ -123,34 +133,34 @@ export function AddTeam({ onTeamAdded, trigger }: AddTeamProps) {
                 rows={2}
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="admin_name" className="text-right">
+              <Label htmlFor="adminName" className="text-right">
                 Admin Name
               </Label>
               <Input
-                id="admin_name"
-                value={formData.admin_name}
-                onChange={(e) => setFormData({ ...formData, admin_name: e.target.value })}
+                id="adminName"
+                value={formData.adminName}
+                onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
                 className="col-span-3"
                 placeholder="Team leader/supervisor name"
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="admin_phone" className="text-right">
+              <Label htmlFor="adminPhone" className="text-right">
                 Admin Phone
               </Label>
               <Input
-                id="admin_phone"
+                id="adminPhone"
                 type="tel"
-                value={formData.admin_phone}
-                onChange={(e) => setFormData({ ...formData, admin_phone: e.target.value })}
+                value={formData.adminPhone}
+                onChange={(e) => setFormData({ ...formData, adminPhone: e.target.value })}
                 className="col-span-3"
                 placeholder="+254712345678"
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">
                 Team Color
@@ -161,9 +171,8 @@ export function AddTeam({ onTeamAdded, trigger }: AddTeamProps) {
                     key={color}
                     type="button"
                     onClick={() => setFormData({ ...formData, color })}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === color ? 'border-gray-800' : 'border-gray-300'
-                    }`}
+                    className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800' : 'border-gray-300'
+                      }`}
                     style={{ backgroundColor: color }}
                     title={color}
                   />

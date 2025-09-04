@@ -55,11 +55,11 @@ export function TeamSelector({ showLabel = true, size = 'default', onTeamChange 
           variant="outline" 
           size={size}
           className="gap-2 font-medium"
-          style={{ borderColor: currentTeam.color }}
+          style={{ borderColor: currentTeam.color || '#3B82F6' }}
         >
           <div 
             className="w-3 h-3 rounded-full" 
-            style={{ backgroundColor: currentTeam.color }}
+            style={{ backgroundColor: currentTeam.color || '#3B82F6' }}
           />
           {showLabel && (
             <span className="hidden sm:inline">
@@ -86,7 +86,7 @@ export function TeamSelector({ showLabel = true, size = 'default', onTeamChange 
           >
             <div 
               className="w-3 h-3 rounded-full flex-shrink-0" 
-              style={{ backgroundColor: team.color }}
+              style={{ backgroundColor: team.color || '#3B82F6' }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export function TeamIndicator() {
     <div className="flex items-center gap-2">
       <div 
         className="w-3 h-3 rounded-full" 
-        style={{ backgroundColor: currentTeam.color }}
+        style={{ backgroundColor: currentTeam.color || '#3B82F6' }}
       />
       <span className="text-sm font-medium text-muted-foreground">
         {currentTeam.name}

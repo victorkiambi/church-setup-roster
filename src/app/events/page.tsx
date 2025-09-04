@@ -19,7 +19,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
-import { eventsApi, supabase, type Event, type Member } from '@/lib/supabase'
+import { eventsApi, type Event, type Member } from '@/lib/neon'
 import { useTeam } from '@/contexts/team-context'
 import { formatDate, getNextSundays } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
@@ -48,31 +48,27 @@ export default function EventsPage() {
   const loadArchivedEvents = useCallback(async () => {
     if (!currentTeam?.id) return []
     try {
-      const archived = await eventsApi.getArchived(currentTeam.id)
-      // Get assignments for archived events
-      const archivedWithAssignments = await Promise.all(
-        archived.map(async (event) => {
-          const { data } = await supabase
-            .from('events')
-            .select(`
-              *,
-              team:teams(*),
-              assignments (
-                id,
-                member:members (
-                  id,
-                  name,
-                  phone,
-                  team_id
-                )
-              )
-            `)
-            .eq('id', event.id)
-            .single()
-          return data
-        })
-      )
-      return archivedWithAssignments.filter(Boolean)
+      // Get archived events with assignments using the existing API
+      const { getDb } = await import('@/lib/db')
+      const database = getDb()
+      
+      const archivedWithAssignments = await database.query.events.findMany({
+        where: (events, { eq, and }) => and(
+          eq(events.teamId, currentTeam.id),
+          eq(events.isArchived, true)
+        ),
+        with: {
+          team: true,
+          assignments: {
+            with: {
+              member: true
+            }
+          }
+        },
+        orderBy: (events, { desc }) => desc(events.eventDate)
+      })
+      
+      return archivedWithAssignments
     } catch (error) {
       console.error('Error loading archived events:', error)
       return []
@@ -91,8 +87,25 @@ export default function EventsPage() {
         loadArchivedEvents()
       ])
       
-      setEvents(activeData)
-      setArchivedEvents(archivedData)
+      // Transform the data to match EventWithAssignments type
+      const transformedActiveData = activeData.map(event => ({
+        ...event,
+        assignments: event.assignments?.filter(a => a.member).map(a => ({
+          id: a.id,
+          member: a.member!
+        })) || []
+      }))
+      
+      const transformedArchivedData = archivedData.map(event => ({
+        ...event,
+        assignments: event.assignments?.filter(a => a.member).map(a => ({
+          id: a.id,
+          member: a.member!
+        })) || []
+      }))
+      
+      setEvents(transformedActiveData)
+      setArchivedEvents(transformedArchivedData)
     } catch (error) {
       console.error('Error loading events:', error)
       alert('Failed to load events. Please check your connection.')
@@ -124,9 +137,9 @@ export default function EventsPage() {
     try {
       await eventsApi.create({
         title: specialEventForm.title.trim(),
-        event_date: format(specialEventForm.date, 'yyyy-MM-dd'),
-        event_type: 'special',
-        team_id: currentTeam.id
+        eventDate: format(specialEventForm.date, 'yyyy-MM-dd'),
+        eventType: 'special',
+        teamId: currentTeam.id
       })
       
       setSpecialEventForm({ title: '', date: undefined })
@@ -183,20 +196,20 @@ export default function EventsPage() {
   const currentYear = now.getFullYear()
   
   const currentMonthSundays = events.filter(e => {
-    if (e.event_type !== 'sunday') return false
-    const eventDate = new Date(e.event_date)
+    if (e.eventType !== 'sunday') return false
+    const eventDate = new Date(e.eventDate)
     return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
   })
   
   const otherSundays = events.filter(e => {
-    if (e.event_type !== 'sunday') return false
-    const eventDate = new Date(e.event_date)
+    if (e.eventType !== 'sunday') return false
+    const eventDate = new Date(e.eventDate)
     return !(eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear)
   })
   
-  const sundayEvents = events.filter(e => e.event_type === 'sunday')
-  const specialEvents = events.filter(e => e.event_type === 'special')
-  const upcomingEvents = events.filter(e => new Date(e.event_date) >= new Date())
+  const sundayEvents = events.filter(e => e.eventType === 'sunday')
+  const specialEvents = events.filter(e => e.eventType === 'special')
+  const upcomingEvents = events.filter(e => new Date(e.eventDate) >= new Date())
 
   return (
     <div className="container mx-auto py-4 sm:py-6 px-4">
@@ -388,7 +401,7 @@ export default function EventsPage() {
                         <div className="min-w-0 flex-1">
                           <h4 className="font-medium">{event.title}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(event.event_date)}
+                            {formatDate(event.eventDate)}
                           </p>
                         </div>
                         <Badge variant="default" className="flex-shrink-0">Sunday</Badge>
@@ -464,7 +477,7 @@ export default function EventsPage() {
                         <div className="min-w-0 flex-1">
                           <h4 className="font-medium">{event.title}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(event.event_date)}
+                            {formatDate(event.eventDate)}
                           </p>
                         </div>
                         <Badge variant="outline" className="flex-shrink-0">Sunday</Badge>
@@ -548,7 +561,7 @@ export default function EventsPage() {
                         <div className="min-w-0 flex-1">
                           <h4 className="font-medium">{event.title}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(event.event_date)}
+                            {formatDate(event.eventDate)}
                           </p>
                         </div>
                         <Badge variant="secondary" className="flex-shrink-0">Special</Badge>
@@ -629,11 +642,11 @@ export default function EventsPage() {
                           <div className="min-w-0 flex-1">
                             <h4 className="font-medium text-gray-700">{event.title}</h4>
                             <p className="text-sm text-muted-foreground">
-                              {formatDate(event.event_date)}
+                              {formatDate(event.eventDate)}
                             </p>
                           </div>
-                          <Badge variant={event.event_type === 'sunday' ? 'default' : 'secondary'} className="opacity-75 flex-shrink-0">
-                            {event.event_type === 'sunday' ? 'Sunday' : 'Special'}
+                          <Badge variant={event.eventType === 'sunday' ? 'default' : 'secondary'} className="opacity-75 flex-shrink-0">
+                            {event.eventType === 'sunday' ? 'Sunday' : 'Special'}
                           </Badge>
                         </div>
                       </div>

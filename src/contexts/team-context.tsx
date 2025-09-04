@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { teamsApi, type Team } from '@/lib/supabase'
+import { type Team } from '@/lib/neon'
 
 interface TeamContextType {
   currentTeam: Team | null
@@ -27,11 +27,15 @@ export function TeamProvider({ children }: TeamProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load teams from database
+  // Load teams from API
   const loadTeams = useCallback(async () => {
     try {
       setError(null)
-      const teamsData = await teamsApi.getAll()
+      const response = await fetch('/api/teams')
+      if (!response.ok) {
+        throw new Error('Failed to fetch teams')
+      }
+      const teamsData = await response.json()
       setTeams(teamsData)
       
       // Set default team if none selected

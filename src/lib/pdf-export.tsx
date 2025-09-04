@@ -1,7 +1,7 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer'
 import { format } from 'date-fns'
-import { type Event, type Member } from './supabase'
+import { type Event, type Member } from './neon'
 
 type EventWithAssignments = Event & { assignments: Array<{ id: string; member: Member }> }
 
@@ -146,10 +146,10 @@ interface PDFDocumentProps {
 }
 
 const PDFDocument: React.FC<PDFDocumentProps> = ({ events, month, year }) => {
-  const sundayEvents = events.filter(e => e.event_type === 'sunday')
-  const specialEvents = events.filter(e => e.event_type === 'special')
+  const sundayEvents = events.filter(e => e.eventType === 'sunday')
+  const specialEvents = events.filter(e => e.eventType === 'special')
   const totalAssignments = events.reduce((sum, e) => sum + (e.assignments?.length || 0), 0)
-  const totalMembers = new Set(events.flatMap(e => e.assignments?.map(a => a.member.id) || [])).size
+  const totalMembers = new Set(events.flatMap(e => e.assignments?.filter(a => a.member).map(a => a.member!.id) || [])).size
 
   return (
     <Document>
@@ -171,7 +171,7 @@ const PDFDocument: React.FC<PDFDocumentProps> = ({ events, month, year }) => {
               <View style={styles.eventLeft}>
                 <Text style={styles.eventTitle}>{event.title}</Text>
                 <Text style={styles.eventDate}>
-                  {format(new Date(event.event_date), 'EEEE, MMMM d, yyyy')}
+                  {format(new Date(event.eventDate), 'EEEE, MMMM d, yyyy')}
                 </Text>
                 <Text style={styles.eventType}>Sunday Service</Text>
               </View>
@@ -202,7 +202,7 @@ const PDFDocument: React.FC<PDFDocumentProps> = ({ events, month, year }) => {
                 <View style={styles.eventLeft}>
                   <Text style={styles.eventTitle}>{event.title}</Text>
                   <Text style={styles.eventDate}>
-                    {format(new Date(event.event_date), 'EEEE, MMMM d, yyyy')}
+                    {format(new Date(event.eventDate), 'EEEE, MMMM d, yyyy')}
                   </Text>
                   <Text style={styles.eventType}>Special Event</Text>
                 </View>
@@ -287,7 +287,7 @@ export const exportCurrentMonthEvents = async (events: EventWithAssignments[]) =
   const currentYear = now.getFullYear()
   
   const currentMonthEvents = events.filter(event => {
-    const eventDate = new Date(event.event_date)
+    const eventDate = new Date(event.eventDate)
     return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
   })
 
