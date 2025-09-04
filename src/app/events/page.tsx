@@ -19,9 +19,10 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AssignMembers } from '@/components/assign-members'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
-import { eventsApi, type Event, type Member } from '@/lib/neon'
+import { eventsApi } from '@/lib/api-client'
+import type { Event, Member } from '@/lib/db/schema'
 import { useTeam } from '@/contexts/team-context'
-import { formatDate, getNextSundays } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { autoArchivePastEvents } from '@/lib/auto-archive'
 import { exportCurrentMonthEvents } from '@/lib/pdf-export'
 import { cn } from '@/lib/utils'
@@ -38,7 +39,7 @@ export default function EventsPage() {
   const [showAddSpecial, setShowAddSpecial] = useState(false)
   const [showGenerateSundays, setShowGenerateSundays] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
-  
+
   // Add Special Event Form
   const [specialEventForm, setSpecialEventForm] = useState({
     title: '',
@@ -48,27 +49,14 @@ export default function EventsPage() {
   const loadArchivedEvents = useCallback(async () => {
     if (!currentTeam?.id) return []
     try {
-      // Get archived events with assignments using the existing API
-      const { getDb } = await import('@/lib/db')
-      const database = getDb()
-      
-      const archivedWithAssignments = await database.query.events.findMany({
-        where: (events, { eq, and }) => and(
-          eq(events.teamId, currentTeam.id),
-          eq(events.isArchived, true)
-        ),
-        with: {
-          team: true,
-          assignments: {
-            with: {
-              member: true
-            }
-          }
-        },
-        orderBy: (events, { desc }) => desc(events.eventDate)
-      })
-      
-      return archivedWithAssignments
+      // Get archived events
+      const archivedEvents = await eventsApi.getArchived(currentTeam.id)
+
+      // Return archived events with empty assignments array for now
+      return archivedEvents.map(event => ({
+        ...event,
+        assignments: [] as Array<{ id: string; member: Member }>
+      }))
     } catch (error) {
       console.error('Error loading archived events:', error)
       return []
@@ -80,13 +68,13 @@ export default function EventsPage() {
     try {
       // Auto-archive past events first
       await autoArchivePastEvents(currentTeam.id)
-      
+
       // Load active and archived events
       const [activeData, archivedData] = await Promise.all([
         eventsApi.getWithAssignments(currentTeam.id),
         loadArchivedEvents()
       ])
-      
+
       // Transform the data to match EventWithAssignments type
       const transformedActiveData = activeData.map(event => ({
         ...event,
@@ -95,15 +83,9 @@ export default function EventsPage() {
           member: a.member!
         })) || []
       }))
-      
-      const transformedArchivedData = archivedData.map(event => ({
-        ...event,
-        assignments: event.assignments?.filter(a => a.member).map(a => ({
-          id: a.id,
-          member: a.member!
-        })) || []
-      }))
-      
+
+      const transformedArchivedData = archivedData
+
       setEvents(transformedActiveData)
       setArchivedEvents(transformedArchivedData)
     } catch (error) {
@@ -118,11 +100,10 @@ export default function EventsPage() {
     if (!currentTeam?.id) return
     setLoading(true)
     try {
-      const nextSunday = getNextSundays(1)[0]
-      await eventsApi.generateSundays(nextSunday, currentTeam.id, 8)
+      await eventsApi.generateMissingSundaysForMonth(currentTeam.id)
       await loadEvents()
       setShowGenerateSundays(false)
-      alert('Successfully generated 8 weeks of Sunday services!')
+      alert('Successfully generated Sunday services!')
     } catch (error) {
       console.error('Error generating Sundays:', error)
       alert('Failed to generate Sunday services. Some dates may already exist.')
@@ -139,9 +120,10 @@ export default function EventsPage() {
         title: specialEventForm.title.trim(),
         eventDate: format(specialEventForm.date, 'yyyy-MM-dd'),
         eventType: 'special',
-        teamId: currentTeam.id
+        teamId: currentTeam.id,
+        isArchived: false
       })
-      
+
       setSpecialEventForm({ title: '', date: undefined })
       setShowAddSpecial(false)
       await loadEvents()
@@ -194,19 +176,19 @@ export default function EventsPage() {
   const now = new Date()
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
-  
+
   const currentMonthSundays = events.filter(e => {
     if (e.eventType !== 'sunday') return false
     const eventDate = new Date(e.eventDate)
     return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear
   })
-  
+
   const otherSundays = events.filter(e => {
     if (e.eventType !== 'sunday') return false
     const eventDate = new Date(e.eventDate)
     return !(eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear)
   })
-  
+
   const sundayEvents = events.filter(e => e.eventType === 'sunday')
   const specialEvents = events.filter(e => e.eventType === 'special')
   const upcomingEvents = events.filter(e => new Date(e.eventDate) >= new Date())
@@ -219,21 +201,21 @@ export default function EventsPage() {
           <h1 className="text-2xl font-bold">{currentTeam?.name || 'Team'} Events & Assignments</h1>
           <p className="text-muted-foreground">Manage {currentTeam?.name?.toLowerCase() || 'team'} Sunday services and special events</p>
         </div>
-        
+
         {/* Action Buttons - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleExportPDF}
               className="text-green-600 hover:text-green-700"
             >
               <Download className="h-4 w-4 mr-2" />
               Export PDF
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               onClick={() => setShowArchived(!showArchived)}
               className={showArchived ? 'bg-gray-100' : ''}
             >
@@ -241,7 +223,7 @@ export default function EventsPage() {
               {showArchived ? 'Hide' : 'View'} Archived ({archivedEvents.length})
             </Button>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-2">
             <Dialog open={showGenerateSundays} onOpenChange={setShowGenerateSundays}>
               <DialogTrigger asChild>
@@ -326,7 +308,7 @@ export default function EventsPage() {
                   <Button variant="outline" onClick={() => setShowAddSpecial(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={addSpecialEvent}
                     disabled={!specialEventForm.title.trim() || !specialEventForm.date}
                     className="w-full sm:w-auto"
@@ -407,7 +389,7 @@ export default function EventsPage() {
                         <Badge variant="default" className="flex-shrink-0">Sunday</Badge>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col gap-2">
                       <div className="text-sm text-muted-foreground">
                         {event.assignments && event.assignments.length > 0 ? (
@@ -422,10 +404,10 @@ export default function EventsPage() {
                           <span className="text-muted-foreground">No assignments</span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
-                        
+
                         <DeleteConfirmation
                           variant="archive"
                           title="Archive Event"
@@ -436,7 +418,7 @@ export default function EventsPage() {
                             <Archive className="h-4 w-4" />
                           </Button>
                         </DeleteConfirmation>
-                        
+
                         <DeleteConfirmation
                           variant="delete"
                           title="Delete Event"
@@ -483,7 +465,7 @@ export default function EventsPage() {
                         <Badge variant="outline" className="flex-shrink-0">Sunday</Badge>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col gap-2">
                       <div className="text-sm text-muted-foreground">
                         {event.assignments && event.assignments.length > 0 ? (
@@ -498,10 +480,10 @@ export default function EventsPage() {
                           <span className="text-muted-foreground">No assignments</span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
-                        
+
                         <DeleteConfirmation
                           variant="archive"
                           title="Archive Event"
@@ -512,7 +494,7 @@ export default function EventsPage() {
                             <Archive className="h-4 w-4" />
                           </Button>
                         </DeleteConfirmation>
-                        
+
                         <DeleteConfirmation
                           variant="delete"
                           title="Delete Event"
@@ -567,7 +549,7 @@ export default function EventsPage() {
                         <Badge variant="secondary" className="flex-shrink-0">Special</Badge>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col gap-2">
                       <div className="text-sm text-muted-foreground">
                         {event.assignments && event.assignments.length > 0 ? (
@@ -582,10 +564,10 @@ export default function EventsPage() {
                           <span className="text-muted-foreground">No assignments</span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <AssignMembers event={event} onAssignmentsChanged={loadEvents} />
-                        
+
                         <DeleteConfirmation
                           variant="archive"
                           title="Archive Event"
@@ -596,7 +578,7 @@ export default function EventsPage() {
                             <Archive className="h-4 w-4" />
                           </Button>
                         </DeleteConfirmation>
-                        
+
                         <DeleteConfirmation
                           variant="delete"
                           title="Delete Event"
@@ -650,7 +632,7 @@ export default function EventsPage() {
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col gap-2">
                         <div className="text-sm text-muted-foreground">
                           {event.assignments && event.assignments.length > 0 ? (
@@ -665,18 +647,18 @@ export default function EventsPage() {
                             <span className="text-muted-foreground">No assignments</span>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleUnarchiveEvent(event.id)}
                             className="text-blue-600 hover:text-blue-700"
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             <span className="hidden sm:inline">Restore</span>
                           </Button>
-                          
+
                           <DeleteConfirmation
                             variant="delete"
                             title="Delete Archived Event"

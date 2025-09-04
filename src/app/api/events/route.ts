@@ -6,6 +6,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const teamId = searchParams.get('teamId')
     const type = searchParams.get('type') // 'upcoming', 'all', 'archived'
+    const withAssignments = searchParams.get('withAssignments') === 'true'
 
     if (!teamId) {
       return NextResponse.json(
@@ -15,18 +16,22 @@ export async function GET(request: Request) {
     }
 
     let events
-    switch (type) {
-      case 'upcoming':
-        events = await eventsApi.getUpcoming(teamId)
-        break
-      case 'archived':
-        events = await eventsApi.getArchived(teamId)
-        break
-      case 'all':
-        events = await eventsApi.getAllIncludingArchived(teamId)
-        break
-      default:
-        events = await eventsApi.getAll(teamId)
+    if (withAssignments) {
+      events = await eventsApi.getWithAssignments(teamId)
+    } else {
+      switch (type) {
+        case 'upcoming':
+          events = await eventsApi.getUpcoming(teamId)
+          break
+        case 'archived':
+          events = await eventsApi.getArchived(teamId)
+          break
+        case 'all':
+          events = await eventsApi.getAllIncludingArchived(teamId)
+          break
+        default:
+          events = await eventsApi.getAll(teamId)
+      }
     }
     
     return NextResponse.json(events)

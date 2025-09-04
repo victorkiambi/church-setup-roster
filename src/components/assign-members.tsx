@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { membersApi, assignmentsApi, type Member, type Event } from '@/lib/neon'
+import { membersApi, assignmentsApi } from '@/lib/api-client'
+import type { Member, Event } from '@/lib/db/schema'
 import { useCurrentTeamId } from '@/contexts/team-context'
 import { formatDate } from '@/lib/utils'
 import { Users, X } from 'lucide-react'

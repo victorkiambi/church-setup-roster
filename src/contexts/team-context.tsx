@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { type Team } from '@/lib/neon'
+import type { Team } from '@/lib/db/schema'
 
 interface TeamContextType {
   currentTeam: Team | null
@@ -35,7 +35,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
       if (!response.ok) {
         throw new Error('Failed to fetch teams')
       }
-      const teamsData = await response.json()
+      const teamsData: Team[] = await response.json()
       setTeams(teamsData)
       
       // Set default team if none selected
@@ -45,10 +45,10 @@ export function TeamProvider({ children }: TeamProviderProps) {
         
         // Try to use saved team ID or default to Setup team
         if (savedTeamId) {
-          const savedTeam = teamsData.find(t => t.id === savedTeamId)
+          const savedTeam = teamsData.find((t: Team) => t.id === savedTeamId)
           if (savedTeam) teamToSelect = savedTeam
         } else {
-          const setupTeam = teamsData.find(t => t.id === DEFAULT_SETUP_TEAM_ID)
+          const setupTeam = teamsData.find((t: Team) => t.id === DEFAULT_SETUP_TEAM_ID)
           if (setupTeam) teamToSelect = setupTeam
         }
         

@@ -6,13 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DutyCard } from '@/components/duty-card'
-import { type Event, type Member } from '@/lib/neon'
+import type { Event, Member } from '@/lib/db/schema'
 import { formatDate } from '@/lib/utils'
 import { Calendar, ArrowLeft, Share2, Users } from 'lucide-react'
 import Link from 'next/link'
 
 type EventWithAssignments = Event & { 
   assignments: Array<{ id: string; member: Member }>;
+}
+
+type RawAssignment = {
+  id: string;
+  member: Member | null;
 }
 
 export default function ShareEventPage() {
@@ -23,34 +28,27 @@ export default function ShareEventPage() {
 
   const loadEvent = useCallback(async () => {
     try {
-      const { getDb } = await import('@/lib/db')
-      const database = getDb()
-      
       const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId
       if (!eventId) {
         setError('Invalid event ID')
         return
       }
       
-      const foundEvent = await database.query.events.findFirst({
-        where: (events, { eq }) => eq(events.id, eventId),
-        with: {
-          team: true,
-          assignments: {
-            with: {
-              member: true
-            }
-          }
-        }
-      })
+      // Use API call instead of direct database access
+      const response = await fetch(`/api/events/${eventId}`)
+      if (!response.ok) {
+        throw new Error('Event not found')
+      }
+      
+      const foundEvent = await response.json()
       
       if (foundEvent) {
         // Transform the data to match DutyCard expectations
         const transformedEvent: EventWithAssignments = {
           ...foundEvent,
           assignments: foundEvent.assignments
-            .filter(a => a.member !== null)
-            .map(a => ({
+            .filter((a: RawAssignment) => a.member !== null)
+            .map((a: RawAssignment) => ({
               id: a.id,
               member: a.member!
             }))

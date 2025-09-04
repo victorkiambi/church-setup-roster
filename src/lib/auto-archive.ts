@@ -1,14 +1,24 @@
-import { eventsApi } from './neon'
-
 /**
  * Auto-archive past events for a specific team
  * This function should be called on app initialization to clean up old events
  */
 export async function autoArchivePastEvents(teamId: string): Promise<number> {
   try {
-    const archivedEvents = await eventsApi.autoArchivePastEvents(teamId)
-    console.log(`Auto-archived ${archivedEvents.length} past events for team ${teamId}`)
-    return archivedEvents.length
+    const response = await fetch('/api/auto-archive', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ teamId }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const result = await response.json()
+    console.log(`Auto-archived ${result.archivedCount} past events for team ${teamId}`)
+    return result.archivedCount
   } catch (error) {
     console.error('Error auto-archiving past events:', error)
     return 0

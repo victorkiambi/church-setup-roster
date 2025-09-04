@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AddTeam } from '@/components/add-team'
-import { type Team } from '@/lib/neon'
+import type { Team } from '@/lib/db/schema'
 import { formatDate } from '@/lib/utils'
 import { Users, Calendar, Phone, ToggleLeft, ToggleRight } from 'lucide-react'
 

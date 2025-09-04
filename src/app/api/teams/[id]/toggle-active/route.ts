@@ -3,9 +3,10 @@ import { teamsApi } from '@/lib/neon'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { isActive } = body
     
@@ -16,7 +17,7 @@ export async function PUT(
       )
     }
 
-    const team = await teamsApi.toggleActive(params.id, isActive)
+    const team = await teamsApi.toggleActive(id, isActive)
     return NextResponse.json(team)
   } catch (error) {
     console.error('Error toggling team status:', error)
